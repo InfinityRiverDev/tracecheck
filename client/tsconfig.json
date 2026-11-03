@@ -13,10 +13,9 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "useDefineForClassFields": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@content": ["../content.ts"]
+      "@/*": ["./src/*"],
+      "@content": ["./../content.ts"]
     }
   },
   "include": ["src", "../content.ts", "vite.config.ts"]
