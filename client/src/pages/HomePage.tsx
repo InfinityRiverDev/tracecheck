@@ -7,6 +7,7 @@ import { resetCheckup } from '../state/checkupSlice'
 import type { AppDispatch } from '../store'
 import { Link } from '../router'
 import { VoxelTraceScene } from '../components/VoxelTraceScene'
+import { PixelIcon } from '../design/PixelIcon'
 
 export function HomePage() {
   const dispatch: AppDispatch = useDispatch()
@@ -18,10 +19,10 @@ export function HomePage() {
       <p className="lead">Твой цифровой след — за 5 минут.</p>
       <div className="cta">
         <Link to="case" className="primary button-link">
-          Начать <span aria-hidden="true">→</span>
+          Начать <PixelIcon name="arrow-right" size={24} />
         </Link>
         <Link to="checkup" className="secondary button-link">
-          Сразу проверить себя
+          <PixelIcon name="shield" size={24} /> Сразу проверить себя
         </Link>
       </div>
       <div className="footprint-trail" aria-hidden="true">

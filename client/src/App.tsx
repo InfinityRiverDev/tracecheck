@@ -4,7 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { CheckupPage } from './pages/CheckupPage'
 import { ReportPage } from './pages/ReportPage'
 import { GameRoute } from './game/GameRoute'
-import { Footprint } from './design/Footprint'
+import { PixelIcon } from './design/PixelIcon'
 
 const titles: Record<string, string> = {
   home: 'TraceCheck — досье за 5 минут',
@@ -26,11 +26,11 @@ export default function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <a href="#/" className="brand"><Footprint />TraceCheck</a>
+        <a href="#/" className="brand"><PixelIcon name="fingerprint" size={30} />TraceCheck</a>
         <nav className="topnav" aria-label="Этапы TraceCheck">
-          <a href="#/" aria-current={route === 'home' ? 'page' : undefined}>1 Главная</a>
-          <a href="#/case" aria-current={gameRoute ? 'page' : undefined}>2 Игра</a>
-          <a href="#/report" aria-current={route === 'report' ? 'page' : undefined}>3 Результат</a>
+          <a href="#/" aria-current={route === 'home' ? 'page' : undefined}><PixelIcon name="home" size={20} />1 Главная</a>
+          <a href="#/case" aria-current={gameRoute ? 'page' : undefined}><PixelIcon name="levels" size={20} />2 Игра</a>
+          <a href="#/report" aria-current={route === 'report' ? 'page' : undefined}><PixelIcon name="dossier" size={20} />3 Результат</a>
         </nav>
       </header>
       <main id="main" className="main" tabIndex={-1}>

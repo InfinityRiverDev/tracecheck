@@ -73,6 +73,14 @@ body {
   color: var(--brand);
 }
 
+.pixel-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
 .main {
   flex: 1;
   width: 100%;
@@ -448,7 +456,7 @@ body { font-family: Manrope, system-ui, sans-serif; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font: 400 15px/1.6 var(--pixel); }
 .brand svg, .footprint-trail { color: var(--accent); }
 .topnav { flex-wrap: wrap; gap: 4px; }
-.topnav a { padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; font-size: .875rem; font-weight: 700; }
+.topnav a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid transparent; border-radius: 10px; font-size: .875rem; font-weight: 700; }
 .topnav a:hover { color: #fff; border-color: #4a3a73; }
 .topnav a[aria-current] { color: #fff; border-color: var(--brand); background: #2a1650; }
 .main { max-width: 1440px; }
