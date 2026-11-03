@@ -34,6 +34,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: clip;
 }
 
 .topbar {
@@ -115,6 +116,77 @@ body {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 18px;
+}
+
+.voxel-stage {
+  position: relative;
+  min-height: 310px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(124, 131, 255, 0.28);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 72% 22%, rgba(64, 215, 176, 0.17), transparent 34%),
+    radial-gradient(circle at 22% 78%, rgba(124, 131, 255, 0.22), transparent 38%),
+    linear-gradient(145deg, #11162b, #171c38 58%, #101426);
+  box-shadow: 0 22px 55px rgba(26, 31, 74, 0.2);
+}
+
+.voxel-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  touch-action: pan-y;
+}
+
+.voxel-ready canvas {
+  opacity: 1;
+}
+
+.voxel-poster {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  grid-template-columns: repeat(3, 18px);
+  gap: 6px;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  transition: opacity 240ms ease;
+}
+
+.voxel-poster span {
+  width: 18px;
+  aspect-ratio: 1;
+  background: #7c83ff;
+  box-shadow: 24px 18px 0 rgba(64, 215, 176, 0.75);
+}
+
+.voxel-ready .voxel-poster {
+  opacity: 0;
+}
+
+.voxel-meta {
+  position: absolute;
+  inset: 16px 16px auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(236, 239, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.voxel-caption {
+  position: absolute;
+  inset: auto 18px 16px;
+  z-index: 2;
+  max-width: 28ch;
+  margin: 0;
+  color: rgba(246, 247, 255, 0.82);
+  font-size: 0.8rem;
 }
 
 /* Кнопки */
@@ -304,8 +376,22 @@ button:disabled {
     padding: 32px 24px 56px;
   }
 
+  .home {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+    align-items: center;
+    gap: 42px;
+    min-height: min(680px, calc(100vh - 180px));
+  }
+
   .home h1 {
-    font-size: 2.4rem;
+    font-size: clamp(2.4rem, 4.3vw, 4.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+
+  .voxel-stage {
+    min-height: 480px;
   }
 
   .cta {
@@ -413,4 +499,38 @@ body { font-family: Manrope, system-ui, sans-serif; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-image::after, .footprint-trail svg { animation: none; }
+}
+
+/* Процедурный воксельный слой дополняет утверждённую пиксельную сцену. */
+.hero-scene > .voxel-stage {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 1;
+  width: clamp(150px, 42%, 250px);
+  min-height: 0;
+  aspect-ratio: 1;
+  border-color: #6b3fb0;
+  border-radius: 18px;
+  background: rgba(11, 7, 20, 0.88);
+  box-shadow: 0 0 32px rgba(192, 132, 252, 0.24);
+  backdrop-filter: blur(4px);
+}
+
+.hero-scene > .voxel-stage .voxel-meta,
+.hero-scene > .voxel-stage .voxel-caption {
+  display: none;
+}
+
+.hero-scene > .scene-tag {
+  z-index: 2;
+}
+
+@media (max-width: 640px) {
+  .hero-scene > .voxel-stage {
+    right: 8px;
+    top: 8px;
+    width: min(43%, 180px);
+    border-radius: 13px;
+  }
 }
