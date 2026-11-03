@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Auth } from './Auth'
 import { clearSession, loadSession, useLeaderboard, type Row, type Session } from './leaderboard'
+import certImage from '../design/certificate.png'
 import './game.css'
 import './quiz.css'
 
@@ -211,7 +212,7 @@ const QUESTIONS: Question[] = [
   { answer: 'Казань', prompt: 'В каком городе живёт пользователь?' },
   { answer: 'Декабристов 129', prompt: 'На каком адресе проживает пользователь?' },
   { answer: 'Кот', prompt: 'Что у Питера на аватарке в другой социальной сети?' },
-  { answer: 'Индия гуджадар', prompt: 'Какую страну и штат недавно посетил Питер?' },
+  { answer: 'Индия гуджарат', prompt: 'Какую страну и штат недавно посетил Питер?' },
   {
     answer: '12/07/2015',
     prompt: 'Когда он последний раз путешествовал?',
@@ -227,8 +228,64 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+function Certificate() {
+  const [last, setLast] = useState('')
+  const [first, setFirst] = useState('')
+  const [url, setUrl] = useState('')
+
+  function generate() {
+    const fio = `${last.trim()} ${first.trim()}`.trim()
+    if (!fio) return
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#4a1d8a'
+      ctx.font = `700 ${Math.round(img.naturalHeight * 0.052)}px Manrope, Arial, sans-serif`
+      ctx.fillText(fio, img.naturalWidth / 2, img.naturalHeight * 0.602)
+      ctx.fillStyle = '#2a0f52'
+      ctx.font = `600 ${Math.round(img.naturalHeight * 0.028)}px Manrope, Arial, sans-serif`
+      ctx.fillText(new Date().toLocaleDateString('ru-RU'), img.naturalWidth * 0.47, img.naturalHeight * 0.862)
+      setUrl(canvas.toDataURL('image/png'))
+    }
+    img.src = certImage
+  }
+
+  return (
+    <div className="q-cert">
+      <h3>🎉 Все вопросы пройдены!</h3>
+      <p>Впиши фамилию и имя — и забери именной сертификат.</p>
+      <div className="q-cert-form">
+        <input value={last} onChange={e => setLast(e.target.value)} placeholder="Фамилия" aria-label="Фамилия" />
+        <input value={first} onChange={e => setFirst(e.target.value)} placeholder="Имя" aria-label="Имя" />
+        <button
+          type="button"
+          className="q-check"
+          onClick={generate}
+          disabled={!last.trim() || !first.trim()}
+        >
+          Получить сертификат
+        </button>
+      </div>
+      {url && (
+        <div className="q-cert-result">
+          <img src={url} alt="Сертификат TraceCheck" />
+          <a className="q-check" href={url} download="TraceCheck-сертификат.png">Скачать</a>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function QuizGame({ session, onLogout }: { session: Session; onLogout: () => void }) {
   const { rows, connected, solve, clearBoard } = useLeaderboard(session.token)
+  const [solved, setSolved] = useState<Set<number>>(() => new Set())
+  const allDone = solved.size === QUESTIONS.length
 
   return (
     <section className="tc-game tc-quiz">
@@ -257,6 +314,8 @@ function QuizGame({ session, onLogout }: { session: Session; onLogout: () => voi
         onClear={clearBoard}
       />
 
+      {allDone && <Certificate />}
+
       {QUESTIONS.map((question, i) => (
         <Riddle
           key={i}
@@ -264,7 +323,14 @@ function QuizGame({ session, onLogout }: { session: Session; onLogout: () => voi
           answer={question.answer}
           prompt={question.prompt}
           mask={question.mask}
-          onSolve={() => solve(i + 1)}
+          onSolve={() => {
+            solve(i + 1)
+            setSolved(prev => {
+              const next = new Set(prev)
+              next.add(i + 1)
+              return next
+            })
+          }}
         />
       ))}
     </section>

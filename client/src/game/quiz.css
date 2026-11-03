@@ -56,6 +56,34 @@
   border-radius: 6px;
   padding: 1px 7px;
 }
+
+/* Сертификат после полного прохождения */
+.q-cert {
+  display: grid;
+  gap: .8rem;
+  padding: clamp(1.1rem, 3.5vw, 1.6rem);
+  border: 1px solid var(--q-ok);
+  border-radius: 16px;
+  background: #0e2a20;
+  box-shadow: 0 0 28px #34d39944;
+  text-align: center;
+}
+.q-cert h3 { margin: 0; }
+.q-cert > p { margin: 0; color: var(--muted, #b3a8cc); }
+.q-cert-form { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+.q-cert-form input {
+  min-height: 44px;
+  padding: .55rem .75rem;
+  border: 1px solid var(--line, #2b2145);
+  border-radius: 8px;
+  background: #0b0714;
+  color: var(--ink, #f4f0ff);
+  font: inherit;
+}
+.q-cert-form input:focus-visible { outline: 2px solid var(--accent, #c084fc); outline-offset: 1px; border-color: var(--accent, #c084fc); }
+.q-cert-result { display: grid; gap: .8rem; justify-items: center; margin-top: .4rem; }
+.q-cert-result img { max-width: 100%; border-radius: 10px; border: 1px solid var(--line, #2b2145); }
+.q-cert-result a { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .q-board table { width: 100%; border-collapse: collapse; }
 .q-board th,
 .q-board td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line, #2b2145); }

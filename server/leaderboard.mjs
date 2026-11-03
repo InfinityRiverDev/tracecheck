@@ -6,50 +6,23 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { MongoClient } from 'mongodb'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA = join(HERE, 'data.json')
 const PORT = Number(process.env.PORT) || 8787
-const ADMIN_NICK = 'админ'
-const ADMIN_PW = process.env.ADMIN_PW || randomBytes(24).toString('base64url')
+const ADMIN_NICK = 'admin'
+const ADMIN_PW = process.env.ADMIN_PW || '1a2r3t4e'
 
 // ---------- хранилище ----------
 let db = { users: {} } // nick -> { salt, hash, solved: { [q]: true } }
 if (existsSync(DATA)) {
   try { db = JSON.parse(readFileSync(DATA, 'utf8')) } catch { db = { users: {} } }
 }
-let stateCollection = null
-const persistenceReady = (async () => {
-  if (!process.env.MONGODB_URI) return
-  const client = new MongoClient(process.env.MONGODB_URI, { appName: 'tracecheck-quiz-live' })
-  await client.connect()
-  stateCollection = client.db().collection('quizLeaderboardState')
-  const saved = await stateCollection.findOne({ key: 'main' })
-  if (typeof saved?.payload === 'string') {
-    try { db = JSON.parse(saved.payload) } catch { db = { users: {} } }
-  }
-})().catch(error => {
-  stateCollection = null
-  console.error('Quiz leaderboard persistence unavailable:', error.message)
-})
 let saveTimer = null
 function save() {
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(async () => {
-    const payload = JSON.stringify(db)
-    await persistenceReady
-    if (stateCollection) {
-      try {
-        await stateCollection.updateOne(
-          { key: 'main' },
-          { $set: { payload, updatedAt: new Date() } },
-          { upsert: true },
-        )
-        return
-      } catch { /* fall back to a local development file */ }
-    }
-    try { writeFileSync(DATA, payload) } catch { /* ignore */ }
+  saveTimer = setTimeout(() => {
+    try { writeFileSync(DATA, JSON.stringify(db)) } catch { /* ignore */ }
   }, 200)
 }
 
@@ -126,8 +99,7 @@ const server = createServer((req, res) => {
       body += chunk
       if (body.length > 10000) req.destroy()
     })
-    req.on('end', async () => {
-      await persistenceReady
+    req.on('end', () => {
       let data
       try { data = JSON.parse(body) } catch { return sendJson(res, 400, { error: 'Некорректный запрос' }) }
       const nick = String(data.nick || '').trim()
@@ -161,8 +133,7 @@ const server = createServer((req, res) => {
 })
 
 // ---------- upgrade → WebSocket ----------
-server.on('upgrade', async (req, socket) => {
-  await persistenceReady
+server.on('upgrade', (req, socket) => {
   const key = req.headers['sec-websocket-key']
   const token = new URL(req.url, 'http://local').searchParams.get('token')
   const nick = token ? sessions.get(token) : undefined
