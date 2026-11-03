@@ -25,6 +25,12 @@ export interface RecommendationLite {
 
 export type Answers = Record<string, string>
 
+export function hasCompleteAnswers(answers: Answers, questions: readonly QuestionLite[]): boolean {
+  return questions.length > 0 && questions.every(question =>
+    question.options.some(option => option.id === answers[question.id]),
+  )
+}
+
 export interface AdviceCause {
   questionLabel: string
   answerLabel: string
@@ -119,6 +125,7 @@ export function evaluateHabits(
       if (existing) {
         existing.causes.push(...causes)
         existing.priority = Math.min(existing.priority, rule.priority)
+        existing.status = statusForPriority(existing.priority)
       } else {
         adviceById.set(recommendationId, {
           recommendation,

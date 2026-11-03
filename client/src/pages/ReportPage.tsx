@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux'
 import { questions, recommendations, riskRules } from '@content'
-import { evaluateHabits } from '../engine/assessment'
+import { evaluateHabits, hasCompleteAnswers } from '../engine/assessment'
 import { goToQuestion } from '../state/checkupSlice'
 import type { AppDispatch, RootState } from '../store'
 import { Link } from '../router'
@@ -13,10 +13,10 @@ const statusClass: Record<string, string> = {
 
 export function ReportPage() {
   const dispatch: AppDispatch = useDispatch()
-  const { answers, done } = useSelector((state: RootState) => state.checkup)
+  const { answers } = useSelector((state: RootState) => state.checkup)
   const result = evaluateHabits(answers, { questions, riskRules, recommendations })
 
-  if (!done && Object.keys(answers).length === 0) {
+  if (!hasCompleteAnswers(answers, questions)) {
     return (
       <section className="page report">
         <h2>Личный отчёт</h2>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useRoute } from './router'
 import { HomePage } from './pages/HomePage'
 import { CheckupPage } from './pages/CheckupPage'
@@ -16,6 +17,9 @@ const titles: Record<string, string> = {
 export default function App() {
   const route = useRoute()
   document.title = titles[route] ?? titles.home
+  useEffect(() => {
+    document.getElementById('main')?.focus()
+  }, [route])
 
   return (
     <div className="shell">
