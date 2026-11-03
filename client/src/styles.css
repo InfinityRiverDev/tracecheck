@@ -483,11 +483,11 @@ body { font-family: Manrope, system-ui, sans-serif; }
 .scene-location { right: 4px; bottom: 24px; }
 .footprint-trail { display: flex; gap: 14px; }
 .footprint-trail { gap: 18px; }
-.footprint-trail svg { width: 30px; height: auto; animation: track 3s ease-in-out infinite, paw-iridescent 4s linear infinite; transform-origin: center; }
-.footprint-trail svg:nth-child(2) { animation-delay: .5s; }
-.footprint-trail svg:nth-child(3) { animation-delay: 1s; }
-.footprint-trail svg:nth-child(4) { animation-delay: 1.5s; }
-.footprint-trail svg:nth-child(5) { animation-delay: 2s; }
+.footprint-trail img { width: 42px; height: auto; animation: track 3s ease-in-out infinite, paw-iridescent 4s linear infinite; transform-origin: center; }
+.footprint-trail img:nth-child(2) { animation-delay: .5s; }
+.footprint-trail img:nth-child(3) { animation-delay: 1s; }
+.footprint-trail img:nth-child(4) { animation-delay: 1.5s; }
+.footprint-trail img:nth-child(5) { animation-delay: 2s; }
 @keyframes track { 0%,100% { opacity: .5; } 35% { opacity: 1; } }
 @keyframes paw-iridescent {
   0%   { filter: hue-rotate(0deg) saturate(1.7) brightness(1.2) drop-shadow(0 0 6px #c084fc); }
@@ -532,7 +532,7 @@ body { font-family: Manrope, system-ui, sans-serif; }
   .scene-location { right: -18px; bottom: 48px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-image::after, .footprint-trail svg { animation: none; }
+  .hero-image::after, .footprint-trail img { animation: none; }
 }
 
 /* Процедурный воксельный слой дополняет утверждённую пиксельную сцену. */

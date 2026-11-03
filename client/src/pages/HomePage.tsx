@@ -1,6 +1,6 @@
 import { posts } from '@content'
 import heroImage from '../design/dima-hero.png'
-import { Footprint } from '../design/Footprint'
+import sledImage from '../design/sled.png'
 import { Link } from '../router'
 import { PixelIcon } from '../design/PixelIcon'
 
@@ -17,7 +17,7 @@ export function HomePage() {
         </Link>
       </div>
       <div className="footprint-trail" aria-hidden="true">
-        {Array.from({ length: 5 }, (_, index) => <Footprint key={index} />)}
+        {Array.from({ length: 5 }, (_, index) => <img key={index} src={sledImage} alt="" />)}
       </div>
       </div>
       <div className="hero-scene">
