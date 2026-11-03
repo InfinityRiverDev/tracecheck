@@ -1,0 +1,16 @@
+.tc-game-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: start; }
+.tc-game-card { padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line, #414b48); border-radius: .75rem; background: var(--panel, #1d2224); }
+.tc-game-card h3 { margin-top: .25rem; }
+.tc-game-label { color: var(--accent, #e2ff72); font: .8rem/1.5 ui-monospace, monospace; letter-spacing: .06em; }
+.tc-game-muted { color: var(--muted, #b2bdb7); }
+.tc-game-art { display: block; width: 100%; border-radius: .45rem; }
+.tc-game-preview { position: relative; }
+.tc-game-redaction { position: absolute; display: grid; place-items: center; top: 7%; right: 6%; width: 33%; height: 22%; border-radius: .25rem; background: #151819; color: #e2ff72; font: 600 .75rem monospace; }
+.tc-game fieldset { margin-top: 1rem; padding: .65rem; border: 1px solid var(--line, #414b48); border-radius: .45rem; }
+.tc-game-option { display: flex; align-items: center; gap: .6rem; min-height: 44px; cursor: pointer; }
+.tc-game-option input { flex: none; width: 1.1rem; height: 1.1rem; accent-color: var(--accent, #e2ff72); }
+.tc-game-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-block: 1.25rem; }
+.tc-game button { min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--line, #414b48); border-radius: .5rem; background: var(--panel, #1d2224); color: var(--ink, #f2f4ee); font: inherit; cursor: pointer; }
+.tc-game button:hover { border-color: var(--accent, #e2ff72); }
+.tc-game button.tc-game-primary { color: #151a0b; background: var(--accent, #e2ff72); }
+.tc-game summary { cursor: pointer; }
