@@ -40,8 +40,8 @@ jobs:
       - name: Build production assets
         run: npm run build
 
-      - name: Build React production assets
-        run: npm run build --prefix client
+      - name: Check Node server with the built React artifact
+        run: npm run check:production
 
       - name: Check assessment examples
         run: node checks/assessment.check.ts

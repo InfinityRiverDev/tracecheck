@@ -7,10 +7,11 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "node build.mjs",
-    "dev": "npm run build && node --env-file=.env server.mjs",
+    "build": "npm run build --prefix client && node build.mjs",
+    "dev": "npm run build && node --env-file-if-exists=.env server.mjs",
     "start": "npm run build && node server.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "check:production": "node checks/production.check.mjs"
   },
   "dependencies": {
     "mongodb": "^7.8.0"

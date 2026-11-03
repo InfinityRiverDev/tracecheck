@@ -1,7 +1,6 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { stripTypeScriptTypes } from 'node:module'
+import { cp, mkdir, stat } from 'node:fs/promises'
 
+// npm run build builds client/ first. The Node server serves this same artifact.
+await stat(new URL('./client/dist/index.html', import.meta.url))
 await mkdir(new URL('./dist/', import.meta.url), { recursive: true })
-await cp(new URL('./web/', import.meta.url), new URL('./dist/', import.meta.url), { recursive: true })
-const content = await readFile(new URL('./content.ts', import.meta.url), 'utf8')
-await writeFile(new URL('./dist/content.js', import.meta.url), stripTypeScriptTypes(content))
+await cp(new URL('./client/dist/', import.meta.url), new URL('./dist/', import.meta.url), { recursive: true })

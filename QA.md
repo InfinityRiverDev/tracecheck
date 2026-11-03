@@ -78,3 +78,7 @@
 ## Синхронизация дизайна19
 
 Завершённые файлы дизайна19 из SMB перенесены в GitHub-ветку qa/design-sync. Исправления14 engine/state/persist сохранены; в App восстановлен route focus, Report использует проверку полноты ответов. Проверка:55/55 tests, production build React успешен. В public/FONT-LICENSES.txt включены уведомления для встроенных шрифтов. Итоговая браузерная проверка exactmain остаётся за17.
+
+## Production запуск20
+
+Корневой build теперь собирает client и копирует Reactartifact в dist, который отдаёт Nodeсервер. npm run check:production проверил реальнымHTTP на свободномloopbackпорту точныйReactindex, JS/CSS, FONT-LICENSES и API503 безDB. README исправлен: UI хранит ответы локально, автоматической Mongoсинхронизации нет. CI выполняет productionHTTP после сборки.
