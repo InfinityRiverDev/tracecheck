@@ -301,8 +301,19 @@ export function createTraceCheckServer({
         if (!store?.findUserBySession) return sendJson(res, 503, { error: 'database_not_configured' })
         const token = readSessionToken(req.headers.cookie)
         const user = token ? await store.findUserBySession(hashSessionToken(token)) : null
+        const progress = user && store.getProgress
+          ? await store.getProgress(user._id ?? user.id)
+          : null
         return user
-          ? sendJson(res, 200, { user: publicUser(user) })
+          ? sendJson(res, 200, {
+              user: publicUser(user),
+              progress: progress ? {
+                exp: Number.isSafeInteger(progress.exp) ? progress.exp : 0,
+                completedLevels: stringIds(progress.completedLevels, 10),
+                achievements: stringIds(progress.achievements, 64),
+                dossierFragments: stringIds(progress.dossierFragments, 64),
+              } : null,
+            })
           : sendJson(res, 401, { error: 'authentication_required' })
       }
 

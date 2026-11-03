@@ -30,6 +30,9 @@ function authStore() {
       const userId = sessions.get(tokenHash)
       return [...users.values()].find(user => user._id === userId) ?? null
     },
+    async getProgress(userId) {
+      return { userId, exp: 0, completedLevels: [], achievements: [], dossierFragments: [] }
+    },
     async deleteAuthSession(tokenHash) { sessions.delete(tokenHash) },
   }
 }
@@ -93,7 +96,9 @@ test('register, me, logout and login use an opaque HttpOnly session', async t =>
 
   const me = await request('/api/auth/me', { headers: { cookie } })
   assert.equal(me.status, 200)
-  assert.equal((await me.json()).user.nickname, 'Trace_Player')
+  const meBody = await me.json()
+  assert.equal(meBody.user.nickname, 'Trace_Player')
+  assert.deepEqual(meBody.progress, { exp: 0, completedLevels: [], achievements: [], dossierFragments: [] })
 
   const logout = await request('/api/auth/logout', post({}, cookie))
   assert.equal(logout.status, 204)

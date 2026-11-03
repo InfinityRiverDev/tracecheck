@@ -5,6 +5,9 @@ import { CheckupPage } from './pages/CheckupPage'
 import { ReportPage } from './pages/ReportPage'
 import { GameRoute } from './game/GameRoute'
 import { PixelIcon } from './design/PixelIcon'
+import { AuthPage } from './pages/AuthPage'
+import { ProfilePage } from './pages/ProfilePage'
+import { useAuth } from './auth/AuthContext'
 
 const titles: Record<string, string> = {
   home: 'TraceCheck — досье за 5 минут',
@@ -13,11 +16,15 @@ const titles: Record<string, string> = {
   edit: 'Редактор публикации · TraceCheck',
   checkup: 'Самооценка · TraceCheck',
   report: 'Личный отчёт · TraceCheck',
+  login: 'Вход · TraceCheck',
+  register: 'Регистрация · TraceCheck',
+  profile: 'Личный кабинет · TraceCheck',
 }
 
 export default function App() {
   const route = useRoute()
-  const gameRoute = route !== 'home' && route !== 'report'
+  const { user } = useAuth()
+  const gameRoute = ['case', 'dossier', 'edit', 'checkup'].includes(route)
   document.title = titles[route] ?? titles.home
   useEffect(() => {
     document.getElementById('main')?.focus()
@@ -31,6 +38,7 @@ export default function App() {
           <a href="#/" aria-current={route === 'home' ? 'page' : undefined}><PixelIcon name="home" size={20} />1 Главная</a>
           <a href="#/case" aria-current={gameRoute ? 'page' : undefined}><PixelIcon name="levels" size={20} />2 Игра</a>
           <a href="#/report" aria-current={route === 'report' ? 'page' : undefined}><PixelIcon name="dossier" size={20} />3 Результат</a>
+          <a href="#/profile" aria-current={route === 'profile' ? 'page' : undefined}><PixelIcon name="profile" size={20} />{user?.nickname ?? 'Профиль'}</a>
         </nav>
       </header>
       <main id="main" className="main" tabIndex={-1}>
@@ -40,9 +48,12 @@ export default function App() {
         {route === 'edit' && <GameRoute screen="edit" />}
         {route === 'checkup' && <CheckupPage />}
         {route === 'report' && <ReportPage />}
+        {route === 'login' && <AuthPage mode="login" />}
+        {route === 'register' && <AuthPage mode="register" />}
+        {route === 'profile' && <ProfilePage />}
       </main>
       <footer className="footer">
-        Ответы остаются в этой вкладке и никуда не отправляются. Учебный проект TraceCheck.
+        Ответы и объяснения не публикуются. Пароли хешируются на сервере. Учебный проект TraceCheck.
       </footer>
     </div>
   )

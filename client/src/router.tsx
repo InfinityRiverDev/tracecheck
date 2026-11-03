@@ -9,8 +9,11 @@ export type RouteName =
   | 'edit'
   | 'checkup'
   | 'report'
+  | 'login'
+  | 'register'
+  | 'profile'
 
-const known: RouteName[] = ['home', 'case', 'dossier', 'edit', 'checkup', 'report']
+const known: RouteName[] = ['home', 'case', 'dossier', 'edit', 'checkup', 'report', 'login', 'register', 'profile']
 
 export function parseHash(hash: string): RouteName {
   const requested = hash.replace(/^#\/?/, '').split('?')[0] as RouteName
