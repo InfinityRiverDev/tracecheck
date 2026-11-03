@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tracecheck
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm ci --prefix client && npm run build
+    startCommand: node render-start.mjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_PW
+        generateValue: true
+      - key: LEADERBOARD_INTERNAL_PORT
+        value: 8787

@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export type Row = { nick: string; score: number; place: number }
 export type Session = { token: string; nick: string; admin: boolean }
 
-// Сервер рейтинга живёт на том же хосте, что и страница, порт 8787.
-const HOST = typeof location !== 'undefined' ? location.hostname || 'localhost' : 'localhost'
-const HTTP = `http://${HOST}:8787`
-const WS = `ws://${HOST}:8787`
+// На production HTTP и WebSocket идут через тот же HTTPS origin. Это избегает
+// mixed-content и позволяет Render публиковать приложение одним web service.
+const ORIGIN = typeof location !== 'undefined' ? location.origin : 'http://localhost:3000'
+const HTTP = `${ORIGIN}/quiz-live-api`
+const WS = `${ORIGIN.replace(/^http/, 'ws')}/quiz-live-ws`
 const KEY = 'tc-session'
 
 export function loadSession(): Session | null {
@@ -36,7 +37,7 @@ async function auth(path: 'register' | 'login', nick: string, password: string):
       body: JSON.stringify({ nick, password }),
     })
   } catch {
-    throw new Error('Сервер рейтинга недоступен — он запущен на :8787?')
+    throw new Error('Сервер рейтинга временно недоступен')
   }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || 'Не получилось')

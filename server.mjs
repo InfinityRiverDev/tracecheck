@@ -1,4 +1,5 @@
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
+import { connect as netConnect } from 'node:net'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,6 +23,51 @@ const VALUE_ID = /^[a-zA-Z0-9_-]{1,80}$/
 const MAX_BODY = 32 * 1024
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const distDir = fileURLToPath(new URL('./dist/', import.meta.url))
+const leaderboardPort = () => Number(process.env.LEADERBOARD_INTERNAL_PORT) || 8787
+
+function proxyLeaderboardHttp(req, res, url) {
+  const path = url.pathname.slice('/quiz-live-api'.length) || '/'
+  const upstream = httpRequest({
+    hostname: '127.0.0.1',
+    port: leaderboardPort(),
+    path: `${path}${url.search}`,
+    method: req.method,
+    headers: { ...req.headers, host: `127.0.0.1:${leaderboardPort()}` },
+  }, upstreamResponse => {
+    res.writeHead(upstreamResponse.statusCode ?? 502, upstreamResponse.headers)
+    upstreamResponse.pipe(res)
+  })
+  upstream.on('error', () => {
+    if (!res.headersSent) sendJson(res, 502, { error: 'leaderboard_unavailable' })
+    else res.destroy()
+  })
+  req.pipe(upstream)
+}
+
+function proxyLeaderboardUpgrade(req, socket, head) {
+  let url
+  try {
+    url = new URL(req.url ?? '/', 'http://tracecheck.local')
+  } catch {
+    socket.destroy()
+    return
+  }
+  if (url.pathname !== '/quiz-live-ws' && url.pathname !== '/quiz-live-ws/') {
+    socket.destroy()
+    return
+  }
+  const upstream = netConnect(leaderboardPort(), '127.0.0.1', () => {
+    const headers = []
+    for (let index = 0; index < req.rawHeaders.length; index += 2) {
+      headers.push(`${req.rawHeaders[index]}: ${req.rawHeaders[index + 1]}`)
+    }
+    upstream.write(`${req.method} /${url.search} HTTP/${req.httpVersion}\r\n${headers.join('\r\n')}\r\n\r\n`)
+    if (head.length) upstream.write(head)
+    socket.pipe(upstream).pipe(socket)
+  })
+  upstream.on('error', () => socket.destroy())
+  socket.on('error', () => upstream.destroy())
+}
 
 export function isValidSessionId(value) {
   return typeof value === 'string' && SESSION_ID.test(value)
@@ -262,9 +308,13 @@ export function createTraceCheckServer({
     return recent.length > 10
   }
 
-  return createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://tracecheck.local')
+      if (url.pathname === '/quiz-live-api' || url.pathname.startsWith('/quiz-live-api/')) {
+        proxyLeaderboardHttp(req, res, url)
+        return
+      }
       if (url.pathname === '/api/health') {
         if (!store) return sendJson(res, 503, { ok: false, database: 'not_configured' })
         await store.ping()
@@ -454,6 +504,8 @@ export function createTraceCheckServer({
       sendJson(res, status, { error: status === 500 ? 'internal_error' : error.message })
     }
   })
+  server.on('upgrade', proxyLeaderboardUpgrade)
+  return server
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
