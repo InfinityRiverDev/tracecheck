@@ -3,6 +3,7 @@ import { posts, questions } from '@content'
 import { answer, finishCheckup, goToQuestion } from '../state/checkupSlice'
 import type { AppDispatch, RootState } from '../store'
 import { navigate } from '../router'
+import '../design/assessment.css'
 
 // Анкета: один вопрос на экран, крупные варианты, «Назад»/«Далее» (ARCHITECTURE.md).
 export function CheckupPage() {
@@ -17,10 +18,12 @@ export function CheckupPage() {
 
   return (
     <section className="page checkup">
+      <h2>Проверь свои привычки</h2>
+      <div className="card checkup-card">
       <p className="progress" aria-live="polite">
         Вопрос {index + 1} из {total}
       </p>
-      <h2>{question.topic}</h2>
+      <h3>{question.topic}</h3>
       <p className="question-label">{question.label}</p>
 
       <div className="options" role="radiogroup" aria-label={question.label}>
@@ -62,6 +65,7 @@ export function CheckupPage() {
         >
           {isLast ? 'Показать отчёт →' : 'Далее →'}
         </button>
+      </div>
       </div>
 
       <p className="hint">

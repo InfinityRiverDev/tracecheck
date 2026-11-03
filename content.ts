@@ -3,6 +3,7 @@ export type Post = {
   title: string
   caption: string
   location?: string
+  ticket?: { date: string; route: string }
   visual: string
   clueIds: readonly string[]
 }
@@ -35,15 +36,16 @@ export const posts = [
     id: 'entrance',
     title: 'Селфи у подъезда',
     caption: 'Наконец-то дома',
-    location: 'Сиреневая аллея, 14 · Листоград',
-    visual: 'На стене за Димой видна табличка «Сиреневая аллея, 14».',
+    location: 'Лесная, 12',
+    visual: 'На стене за Димой видна табличка «Лесная, 12».',
     clueIds: ['address-sign', 'address-location', 'home-caption'],
   },
   {
     id: 'train-ticket',
     title: 'Билет на поезд',
     caption: 'Уезжаю на все выходные!',
-    visual: 'Билет на 7 ноября. Маршрут Листоград → Озёрный. Данные и код скрыты.',
+    visual: 'Билет на 14 ноября. Маршрут Москва — Тверь. Данные и код скрыты.',
+    ticket: { date: '14 ноября', route: 'Москва — Тверь' },
     clueIds: ['weekend-trip'],
   },
 ] satisfies readonly Post[]

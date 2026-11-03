@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { clues, editActions, posts } from '../../../content'
-import entranceImage from '../../../web/entrance.svg'
-import ticketImage from '../../../web/train-ticket.svg'
+import entranceImage from '../design/dima-post.png'
+import avatarImage from '../design/dima-avatar.png'
 import { buildDossier, finding, matchesFinding } from './engine'
 import './game.css'
 
@@ -25,16 +25,23 @@ function Feed({ selected, onToggleClue, onFindingFound, navigate }: GameProps) {
   const found = checked && matchesFinding(selected)
 
   return <>
-    <p className="tc-game-label">01 / ЛЕНТА</p>
-    <h2>Лента Димы</h2>
-    <p>Что связывает место на фото и планы на выходные? Отметь детали из двух постов.</p>
-    <div className="tc-game-grid">
-      {[{ post: entrance, image: entranceImage }, { post: ticket, image: ticketImage }].map(({ post, image }) => (
-        <article className="tc-game-card" key={post.id}>
-          <p className="tc-game-label">ПУБЛИКАЦИЯ · ДИМА</p>
-          <h3>{post.title}</h3>
-          <img className="tc-game-art" src={image} alt={post.visual} />
+    <div className="tc-feed-header">
+      <h2>Игра: досье на Диму</h2>
+      <span className="tc-clue-count">Улики {clues.filter(clue => selected.includes(clue.id)).length} / {clues.length}</span>
+    </div>
+    <p className="tc-feed-task">Задание: свяжи место на фото и планы на выходные. Отметь детали из двух публикаций.</p>
+    <div className="tc-game-grid tc-feed-grid">
+      {[entrance, ticket].map(post => (
+        <article className={'tc-game-card tc-post' + (post.clueIds.some(id => selected.includes(id)) ? ' is-selected' : '')} key={post.id}>
+          <div className="tc-post-author"><img src={avatarImage} alt="" /><span>Дима</span></div>
+          <h3 className="tc-post-title">{post.title}</h3>
+          {'ticket' in post && post.ticket
+            ? <div className="tc-post-media"><div className="tc-ticket">
+                Билет на поезд<br /><span>{post.ticket.date}</span><br />{post.ticket.route}
+              </div></div>
+            : <div className="tc-post-media"><img className="tc-game-art" src={entranceImage} alt={post.visual} /></div>}
           <p>{post.caption}</p>
+          <p className="tc-post-description">{post.visual}</p>
           {'location' in post && <p className="tc-game-muted">⌖ {post.location}</p>}
           <fieldset>
             <legend>Выбери улики</legend>
@@ -50,20 +57,23 @@ function Feed({ selected, onToggleClue, onFindingFound, navigate }: GameProps) {
           </fieldset>
         </article>
       ))}
+      <aside className="tc-game-card tc-clue-panel">
+        <h3>Улики</h3>
+        <ul>{clues.map(clue => <li key={clue.id} className={selected.includes(clue.id) ? 'is-selected' : undefined}>
+          {clue.label}{selected.includes(clue.id) && <span aria-label="выбрано">✓</span>}
+        </li>)}</ul>
+        <p className={'tc-verdict' + (found ? ' is-selected' : '')} aria-live="polite">
+          {found ? 'Связь найдена. Адрес, подпись о доме и планы поездки складываются в один вывод.'
+            : checked ? 'Поищи источник адреса, указание на дом и деталь, которая раскрывает планы поездки.'
+            : 'Адрес и дата отъезда вместе могут дать догадку. Это предположение, не факт.'}
+        </p>
+        <button type="button" className="tc-game-primary" onClick={() => {
+          setChecked(true)
+          if (matchesFinding(selected)) onFindingFound(finding.id)
+        }}>Проверить связь</button>
+        <button type="button" onClick={() => navigate('/case/dossier')}>{found ? 'В досье →' : 'Показать разбор →'}</button>
+      </aside>
     </div>
-    <div className="tc-game-actions">
-      <button type="button" className="tc-game-primary" onClick={() => {
-        setChecked(true)
-        if (matchesFinding(selected)) onFindingFound(finding.id)
-      }}>Проверить связь</button>
-      <button type="button" onClick={() => navigate('/case/dossier')}>Показать разбор →</button>
-    </div>
-    <div aria-live="polite">
-      {checked && <p>{found
-        ? 'Связь найдена. Адрес, подпись о доме и планы поездки складываются в один вывод.'
-        : 'Поищи источник адреса, указание на дом и деталь, которая раскрывает планы поездки.'}</p>}
-    </div>
-    {found && <button type="button" onClick={() => navigate('/case/dossier')}>Открыть досье →</button>}
   </>
 }
 

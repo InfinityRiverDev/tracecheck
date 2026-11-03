@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { CheckupPage } from './pages/CheckupPage'
 import { ReportPage } from './pages/ReportPage'
 import { GameRoute } from './game/GameRoute'
+import { Footprint } from './design/Footprint'
 
 const titles: Record<string, string> = {
   home: 'TraceCheck — досье за 5 минут',
@@ -16,6 +17,7 @@ const titles: Record<string, string> = {
 
 export default function App() {
   const route = useRoute()
+  const gameRoute = route !== 'home' && route !== 'report'
   document.title = titles[route] ?? titles.home
   useEffect(() => {
     document.getElementById('main')?.focus()
@@ -24,13 +26,11 @@ export default function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <a href="#/" className="brand">
-          TraceCheck
-        </a>
-        <nav className="topnav">
-          <a href="#/case">Игра</a>
-          <a href="#/checkup">Самооценка</a>
-          <a href="#/report">Отчёт</a>
+        <a href="#/" className="brand"><Footprint />TraceCheck</a>
+        <nav className="topnav" aria-label="Этапы TraceCheck">
+          <a href="#/" aria-current={route === 'home' ? 'page' : undefined}>1 Главная</a>
+          <a href="#/case" aria-current={gameRoute ? 'page' : undefined}>2 Игра</a>
+          <a href="#/report" aria-current={route === 'report' ? 'page' : undefined}>3 Результат</a>
         </nav>
       </header>
       <main id="main" className="main" tabIndex={-1}>
