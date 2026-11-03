@@ -39,6 +39,20 @@ npm run dev
 `GET /api/sessions/:id` и `PUT /api/sessions/:id` с JSON `{ "state": { ... } }`.
 Документы коллекции `sessions` имеют TTL 30 дней.
 
+Базовая серверная авторизация новой архитектуры:
+
+- `POST /api/auth/register` — `nickname`, `password`, `passwordConfirmation`;
+- `POST /api/auth/login` — `nickname`, `password`;
+- `GET /api/auth/me` — текущий безопасный профиль;
+- `POST /api/auth/logout` — отзыв серверной сессии.
+
+Пароли хешируются `scrypt`, а в `authSessions` сохраняется только SHA-256
+отпечаток случайного токена. Production-cookie имеет атрибуты `__Host-`,
+`Secure`, `HttpOnly`, `SameSite=Lax`; запросы изменения проверяют `Origin` и
+`application/json`. На production задайте точный `PUBLIC_ORIGIN` с протоколом.
+При регистрации создаётся начальный документ `progress`; также подготовлены
+индексы `users`, `levels`, `progress`, `attempts`, `feedback`.
+
 Подключение облачного сохранения к интерфейсу требует отдельного явного выбора
 пользователя; автоматическая синхронизация в текущем выпуске не включена.
 

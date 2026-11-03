@@ -24,8 +24,11 @@ for (const stage of ['connect', 'index']) {
       if (stage === 'connect' && connections === 1) throw new Error('temporary connect failure')
       return this
     })
+    const inertCollection = {
+      async createIndex() {},
+    }
     t.mock.method(MongoClient.prototype, 'db', () => ({
-      collection(name) { assert.equal(name, 'sessions'); return sessions },
+      collection(name) { return name === 'sessions' ? sessions : inertCollection },
     }))
     t.mock.method(MongoClient.prototype, 'close', async () => {})
     const store = createMongoStore('mongodb://127.0.0.1:1/unused_test_database')

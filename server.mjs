@@ -3,6 +3,19 @@ import { readFile, stat } from 'node:fs/promises'
 import { extname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MongoClient } from 'mongodb'
+import {
+  AUTH_SESSION_TTL_MS,
+  clearSessionCookie,
+  createSessionToken,
+  hashPassword,
+  hashSessionToken,
+  isValidPassword,
+  normalizeNickname,
+  publicUser,
+  readSessionToken,
+  sessionCookie,
+  verifyPassword,
+} from './auth.mjs'
 
 const SESSION_ID = /^[a-zA-Z0-9_-]{20,80}$/
 const VALUE_ID = /^[a-zA-Z0-9_-]{1,80}$/
@@ -40,24 +53,39 @@ export function normalizeState(value) {
 export function createMongoStore(uri) {
   if (!uri) return null
   const client = new MongoClient(uri, { appName: 'tracecheck' })
-  let collectionPromise
+  let collectionsPromise
 
-  async function collection() {
-    if (!collectionPromise) {
-      collectionPromise = (async () => {
+  async function collections() {
+    if (!collectionsPromise) {
+      collectionsPromise = (async () => {
         await client.connect()
-        const sessions = client.db().collection('sessions')
+        const database = client.db()
+        const sessions = database.collection('sessions')
+        const users = database.collection('users')
+        const authSessions = database.collection('authSessions')
+        const progress = database.collection('progress')
+        const attempts = database.collection('attempts')
+        const levels = database.collection('levels')
+        const feedback = database.collection('feedback')
         await Promise.all([
           sessions.createIndex({ sessionId: 1 }, { unique: true }),
           sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+          users.createIndex({ nicknameKey: 1 }, { unique: true }),
+          authSessions.createIndex({ tokenHash: 1 }, { unique: true }),
+          authSessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+          authSessions.createIndex({ userId: 1, expiresAt: 1 }),
+          progress.createIndex({ userId: 1 }, { unique: true }),
+          attempts.createIndex({ userId: 1, levelId: 1, createdAt: -1 }),
+          levels.createIndex({ levelId: 1, version: 1 }, { unique: true }),
+          feedback.createIndex({ status: 1, createdAt: 1 }),
         ])
-        return sessions
+        return { sessions, users, authSessions, progress, attempts, levels, feedback }
       })().catch(error => {
-        collectionPromise = undefined
+        collectionsPromise = undefined
         throw error
       })
     }
-    return collectionPromise
+    return collectionsPromise
   }
 
   return {
@@ -65,11 +93,11 @@ export function createMongoStore(uri) {
       await client.db().command({ ping: 1 })
     },
     async get(sessionId) {
-      return (await collection()).findOne({ sessionId }, { projection: { _id: 0, state: 1, updatedAt: 1 } })
+      return (await collections()).sessions.findOne({ sessionId }, { projection: { _id: 0, state: 1, updatedAt: 1 } })
     },
     async save(sessionId, state) {
       const now = new Date()
-      await (await collection()).updateOne(
+      await (await collections()).sessions.updateOne(
         { sessionId },
         {
           $set: { state, updatedAt: now, expiresAt: new Date(now.getTime() + SESSION_TTL_MS) },
@@ -79,13 +107,82 @@ export function createMongoStore(uri) {
       )
       return { state, updatedAt: now }
     },
+    async createUser({ nickname, nicknameKey, passwordHash }) {
+      const now = new Date()
+      const { users, progress } = await collections()
+      const result = await users.insertOne({
+        nickname,
+        nicknameKey,
+        passwordHash,
+        providers: { password: true },
+        avatarKey: 'detective-violet',
+        settings: {},
+        createdAt: now,
+        updatedAt: now,
+      })
+      try {
+        await progress.insertOne({
+          userId: result.insertedId,
+          exp: 0,
+          completedLevels: [],
+          achievements: [],
+          dossierFragments: [],
+          habits: null,
+          createdAt: now,
+          updatedAt: now,
+        })
+      } catch (error) {
+        await users.deleteOne({ _id: result.insertedId })
+        throw error
+      }
+      return { _id: result.insertedId, nickname, createdAt: now }
+    },
+    async findUserByNickname(nicknameKey) {
+      return (await collections()).users.findOne({ nicknameKey })
+    },
+    async createAuthSession({ userId, tokenHash }) {
+      const now = new Date()
+      await (await collections()).authSessions.insertOne({
+        userId,
+        tokenHash,
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + AUTH_SESSION_TTL_MS),
+      })
+    },
+    async findUserBySession(tokenHash) {
+      const { authSessions, users } = await collections()
+      const authSession = await authSessions.findOne({ tokenHash, expiresAt: { $gt: new Date() } })
+      return authSession ? users.findOne({ _id: authSession.userId }) : null
+    },
+    async deleteAuthSession(tokenHash) {
+      await (await collections()).authSessions.deleteOne({ tokenHash })
+    },
+    async getProgress(userId) {
+      return (await collections()).progress.findOne({ userId })
+    },
+    async createAttempt(attempt) {
+      const now = new Date()
+      const result = await (await collections()).attempts.insertOne({ ...attempt, createdAt: now, updatedAt: now })
+      return { id: String(result.insertedId), createdAt: now }
+    },
     close: () => client.close(),
   }
 }
 
-function sendJson(res, status, value) {
-  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
-  res.end(JSON.stringify(value))
+function sendJson(res, status, value, headers = {}) {
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers })
+  res.end(status === 204 ? undefined : JSON.stringify(value))
+}
+
+function acceptsJson(req) {
+  return req.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() === 'application/json'
+}
+
+function trustedMutationOrigin(req, { publicOrigin, secureCookies }) {
+  const origin = req.headers.origin
+  if (!origin) return true
+  const expected = publicOrigin || `${secureCookies ? 'https' : 'http'}://${req.headers.host}`
+  return origin === expected
 }
 
 async function readJson(req) {
@@ -111,7 +208,23 @@ const mime = {
   '.svg': 'image/svg+xml',
 }
 
-export function createTraceCheckServer({ store = createMongoStore(process.env.MONGODB_URI) } = {}) {
+export function createTraceCheckServer({
+  store = createMongoStore(process.env.MONGODB_URI),
+  secureCookies = process.env.NODE_ENV === 'production',
+  publicOrigin = process.env.PUBLIC_ORIGIN,
+} = {}) {
+  const authLimits = new Map()
+  const dummyPasswordHash = hashPassword('tracecheck-dummy-password-never-used')
+
+  function authRateLimited(req, scope, nicknameKey) {
+    const now = Date.now()
+    const key = `${req.socket.remoteAddress ?? 'unknown'}:${scope}:${nicknameKey ?? 'invalid'}`
+    const recent = (authLimits.get(key) ?? []).filter(timestamp => now - timestamp < 15 * 60 * 1000)
+    recent.push(now)
+    authLimits.set(key, recent)
+    return recent.length > 10
+  }
+
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://tracecheck.local')
@@ -119,6 +232,90 @@ export function createTraceCheckServer({ store = createMongoStore(process.env.MO
         if (!store) return sendJson(res, 503, { ok: false, database: 'not_configured' })
         await store.ping()
         return sendJson(res, 200, { ok: true, database: 'connected' })
+      }
+
+      if (url.pathname === '/api/auth/register' && req.method === 'POST') {
+        if (!store?.createUser || !store?.createAuthSession) {
+          return sendJson(res, 503, { error: 'database_not_configured' })
+        }
+        if (!trustedMutationOrigin(req, { publicOrigin, secureCookies })) {
+          return sendJson(res, 403, { error: 'untrusted_origin' })
+        }
+        if (!acceptsJson(req)) return sendJson(res, 415, { error: 'json_required' })
+        const body = await readJson(req)
+        const nickname = normalizeNickname(body?.nickname)
+        if (!nickname) return sendJson(res, 400, { error: 'invalid_nickname' })
+        if (authRateLimited(req, 'register', nickname.key)) {
+          return sendJson(res, 429, { error: 'rate_limited' }, { 'retry-after': '900' })
+        }
+        if (!isValidPassword(body?.password)) return sendJson(res, 400, { error: 'invalid_password' })
+        if (body.password !== body.passwordConfirmation) {
+          return sendJson(res, 400, { error: 'password_confirmation_mismatch' })
+        }
+        try {
+          const user = await store.createUser({
+            nickname: nickname.display,
+            nicknameKey: nickname.key,
+            passwordHash: await hashPassword(body.password),
+          })
+          const token = createSessionToken()
+          await store.createAuthSession({ userId: user._id ?? user.id, tokenHash: hashSessionToken(token) })
+          return sendJson(res, 201, { user: publicUser(user) }, {
+            'set-cookie': sessionCookie(token, { secure: secureCookies }),
+          })
+        } catch (error) {
+          if (error?.code === 11000) return sendJson(res, 409, { error: 'nickname_taken' })
+          throw error
+        }
+      }
+
+      if (url.pathname === '/api/auth/login' && req.method === 'POST') {
+        if (!store?.findUserByNickname || !store?.createAuthSession) {
+          return sendJson(res, 503, { error: 'database_not_configured' })
+        }
+        if (!trustedMutationOrigin(req, { publicOrigin, secureCookies })) {
+          return sendJson(res, 403, { error: 'untrusted_origin' })
+        }
+        if (!acceptsJson(req)) return sendJson(res, 415, { error: 'json_required' })
+        const body = await readJson(req)
+        const nickname = normalizeNickname(body?.nickname)
+        if (!nickname || typeof body?.password !== 'string') {
+          return sendJson(res, 401, { error: 'invalid_credentials' })
+        }
+        if (authRateLimited(req, 'login', nickname.key)) {
+          return sendJson(res, 429, { error: 'rate_limited' }, { 'retry-after': '900' })
+        }
+        const user = await store.findUserByNickname(nickname.key)
+        const passwordMatches = await verifyPassword(body.password, user?.passwordHash ?? await dummyPasswordHash)
+        if (!user || !passwordMatches) {
+          return sendJson(res, 401, { error: 'invalid_credentials' })
+        }
+        const token = createSessionToken()
+        await store.createAuthSession({ userId: user._id ?? user.id, tokenHash: hashSessionToken(token) })
+        return sendJson(res, 200, { user: publicUser(user) }, {
+          'set-cookie': sessionCookie(token, { secure: secureCookies }),
+        })
+      }
+
+      if (url.pathname === '/api/auth/me' && req.method === 'GET') {
+        if (!store?.findUserBySession) return sendJson(res, 503, { error: 'database_not_configured' })
+        const token = readSessionToken(req.headers.cookie)
+        const user = token ? await store.findUserBySession(hashSessionToken(token)) : null
+        return user
+          ? sendJson(res, 200, { user: publicUser(user) })
+          : sendJson(res, 401, { error: 'authentication_required' })
+      }
+
+      if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
+        if (!store?.deleteAuthSession) return sendJson(res, 503, { error: 'database_not_configured' })
+        if (!trustedMutationOrigin(req, { publicOrigin, secureCookies })) {
+          return sendJson(res, 403, { error: 'untrusted_origin' })
+        }
+        const token = readSessionToken(req.headers.cookie)
+        if (token) await store.deleteAuthSession(hashSessionToken(token))
+        return sendJson(res, 204, null, {
+          'set-cookie': clearSessionCookie({ secure: secureCookies }),
+        })
       }
 
       const match = url.pathname.match(/^\/api\/sessions\/([^/]+)$/)
