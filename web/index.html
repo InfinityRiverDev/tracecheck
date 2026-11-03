@@ -15,11 +15,18 @@
     <nav aria-label="Разделы"><a href="#case">Расследование</a><a href="#checkup">Самооценка</a></nav>
   </header>
   <main id="main" class="shell" tabindex="-1">
-    <section id="home" class="hero">
+    <section id="home" class="hero"><div>
       <p class="eyebrow">ДЕЛО 001 <span>·</span> 5 МИНУТ</p>
       <h1>Что о тебе расскажут <em>твои посты?</em></h1>
       <p class="intro">Собери досье на вымышленного студента, измени одну публикацию и посмотри, какие выводы исчезнут.</p>
       <div class="actions"><a class="button primary" href="#case">Начать расследование →</a><a class="button" href="#checkup">Сразу проверить себя</a></div>
+      </div>
+      <aside class="case-file" aria-label="Краткая сводка дела">
+        <div class="file-header"><span>TRACE / 001</span><span>ВЫМЫШЛЕННЫЙ КЕЙС</span></div>
+        <div class="file-preview"><img src="./entrance.svg" alt=""><span>МАТЕРИАЛ 01</span></div>
+        <div class="file-entry"><span>01</span><strong>Селфи у подъезда</strong><span aria-hidden="true">⌖</span></div>
+        <div class="file-entry"><span>02</span><strong>Билет на поезд</strong><span aria-hidden="true">↗</span></div>
+      </aside>
     </section>
     <section id="case" class="view" hidden></section>
     <section id="dossier" class="view" hidden></section>

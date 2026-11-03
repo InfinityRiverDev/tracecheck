@@ -38,3 +38,18 @@ em { font-style: normal; }
 .primary:hover { background: #f0ffae; }
 .view { padding-block: clamp(2rem, 6vw, 5rem); }
 .footer { border-top: 1px solid var(--line); color: var(--muted); }
+.hero { display: grid; gap: 2rem clamp(2rem, 5vw, 5rem); align-items: center; }
+.case-file { padding: 1rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--panel); }
+.file-header, .file-entry { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.file-header, .file-entry span, .file-preview span { font: .75rem/1.5 ui-monospace, monospace; color: var(--muted); }
+.file-header { margin-bottom: .85rem; }
+.file-header span:first-child, .file-entry span:last-child { color: var(--accent); }
+.file-preview { position: relative; }
+.file-preview img { width: 100%; display: block; border-radius: .35rem; }
+.file-preview span { position: absolute; bottom: .5rem; left: .5rem; border-radius: .2rem; padding: .15rem .35rem; background: var(--bg); color: var(--ink); }
+.file-entry { justify-content: flex-start; min-height: 44px; border-bottom: 1px solid var(--line); }
+.file-entry span:last-child { margin-inline-start: auto; }
+.file-entry:last-child { border-bottom: 0; }
+@media (min-width: 52rem) {
+  .hero { grid-template-columns: 1.25fr 1fr; }
+}
