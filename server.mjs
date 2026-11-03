@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { extname, resolve } from 'node:path'
+import { extname, resolve, relative, isAbsolute, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MongoClient } from 'mongodb'
 
@@ -52,7 +52,10 @@ export function createMongoStore(uri) {
           sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
         ])
         return sessions
-      })()
+      })().catch(error => {
+        collectionPromise = undefined
+        throw error
+      })
     }
     return collectionPromise
   }
@@ -110,8 +113,8 @@ const mime = {
 
 export function createTraceCheckServer({ store = createMongoStore(process.env.MONGODB_URI) } = {}) {
   return createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', 'http://tracecheck.local')
     try {
+      const url = new URL(req.url ?? '/', 'http://tracecheck.local')
       if (url.pathname === '/api/health') {
         if (!store) return sendJson(res, 503, { ok: false, database: 'not_configured' })
         await store.ping()
@@ -129,21 +132,31 @@ export function createTraceCheckServer({ store = createMongoStore(process.env.MO
         }
         if (req.method === 'PUT') {
           const body = await readJson(req)
+          if (!body || typeof body !== 'object' || Array.isArray(body) ||
+              !body.state || typeof body.state !== 'object' || Array.isArray(body.state)) {
+            return sendJson(res, 400, { error: 'invalid_state' })
+          }
           return sendJson(res, 200, await store.save(sessionId, normalizeState(body.state)))
         }
         return sendJson(res, 405, { error: 'method_not_allowed' })
       }
 
       if (url.pathname.startsWith('/api/')) return sendJson(res, 404, { error: 'not_found' })
-      const relative = url.pathname === '/' ? './index.html' : `.${decodeURIComponent(url.pathname)}`
-      const file = resolve(distDir, relative)
-      if (!file.startsWith(resolve(distDir))) return sendJson(res, 400, { error: 'invalid_path' })
+      const requestedPath = url.pathname === '/' ? './index.html' : `.${decodeURIComponent(url.pathname)}`
+      const file = resolve(distDir, requestedPath)
+      const fromRoot = relative(distDir, file)
+      if (fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
+        return sendJson(res, 400, { error: 'invalid_path' })
+      }
       const info = await stat(file)
       if (!info.isFile()) throw Object.assign(new Error('not_found'), { code: 'ENOENT' })
       const body = await readFile(file)
       res.writeHead(200, { 'content-type': mime[extname(file)] ?? 'application/octet-stream' })
       res.end(body)
     } catch (error) {
+      if (error?.code === 'ERR_INVALID_URL' || error instanceof URIError) {
+        return sendJson(res, 400, { error: 'invalid_url' })
+      }
       if (error?.code === 'ENOENT') return sendJson(res, 404, { error: 'not_found' })
       const status = Number.isInteger(error?.status) ? error.status : 500
       if (status === 500) console.error(error)
