@@ -1,0 +1,97 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+export type Row = { nick: string; score: number; place: number }
+export type Session = { token: string; nick: string; admin: boolean }
+
+// Сервер рейтинга живёт на том же хосте, что и страница, порт 8787.
+const HOST = typeof location !== 'undefined' ? location.hostname || 'localhost' : 'localhost'
+const HTTP = `http://${HOST}:8787`
+const WS = `ws://${HOST}:8787`
+const KEY = 'tc-session'
+
+export function loadSession(): Session | null {
+  try {
+    const raw = sessionStorage.getItem(KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed.token === 'string' && typeof parsed.nick === 'string') {
+      return { token: parsed.token, nick: parsed.nick, admin: !!parsed.admin }
+    }
+  } catch { /* ignore */ }
+  return null
+}
+export function saveSession(session: Session) {
+  try { sessionStorage.setItem(KEY, JSON.stringify(session)) } catch { /* ignore */ }
+}
+export function clearSession() {
+  try { sessionStorage.removeItem(KEY) } catch { /* ignore */ }
+}
+
+async function auth(path: 'register' | 'login', nick: string, password: string): Promise<Session> {
+  let res: Response
+  try {
+    res = await fetch(`${HTTP}/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick, password }),
+    })
+  } catch {
+    throw new Error('Сервер рейтинга недоступен — он запущен на :8787?')
+  }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'Не получилось')
+  return { token: data.token, nick: data.nick, admin: !!data.admin }
+}
+
+export const register = (nick: string, password: string) => auth('register', nick, password)
+export const login = (nick: string, password: string) => auth('login', nick, password)
+
+// Подключение к live-рейтингу: отдаёт строки, флаг связи и функцию solve(q).
+export function useLeaderboard(token: string | null) {
+  const [rows, setRows] = useState<Row[]>([])
+  const [connected, setConnected] = useState(false)
+  const wsRef = useRef<WebSocket | null>(null)
+
+  useEffect(() => {
+    if (!token) return
+    const activeToken = token
+    let closed = false
+    let retry: number | undefined
+
+    function connect() {
+      const ws = new WebSocket(`${WS}/?token=${encodeURIComponent(activeToken)}`)
+      wsRef.current = ws
+      ws.onopen = () => setConnected(true)
+      ws.onmessage = event => {
+        try {
+          const msg = JSON.parse(event.data)
+          if (msg.type === 'leaderboard' && Array.isArray(msg.rows)) setRows(msg.rows)
+        } catch { /* ignore */ }
+      }
+      ws.onclose = () => {
+        setConnected(false)
+        if (!closed) retry = window.setTimeout(connect, 1500)
+      }
+      ws.onerror = () => ws.close()
+    }
+
+    connect()
+    return () => {
+      closed = true
+      window.clearTimeout(retry)
+      wsRef.current?.close()
+    }
+  }, [token])
+
+  const solve = useCallback((q: number) => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'solve', q }))
+  }, [])
+
+  const clearBoard = useCallback(() => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'clear' }))
+  }, [])
+
+  return { rows, connected, solve, clearBoard }
+}

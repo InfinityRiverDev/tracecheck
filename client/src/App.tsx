@@ -4,6 +4,7 @@ import { HomePage } from './pages/HomePage'
 import { CheckupPage } from './pages/CheckupPage'
 import { ReportPage } from './pages/ReportPage'
 import { GameRoute } from './game/GameRoute'
+import { Quiz } from './game/Quiz'
 import { PixelIcon } from './design/PixelIcon'
 import { AuthPage } from './pages/AuthPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -42,7 +43,7 @@ export default function App() {
       </header>
       <main id="main" className="main" tabIndex={-1}>
         {route === 'home' && <HomePage />}
-        {route === 'case' && <GameRoute screen="case" />}
+        {route === 'case' && <Quiz />}
         {route === 'dossier' && <GameRoute screen="dossier" />}
         {route === 'edit' && <GameRoute screen="edit" />}
         {route === 'checkup' && <CheckupPage />}
@@ -53,6 +54,8 @@ export default function App() {
       </main>
       <footer className="footer">
         Ответы и объяснения не публикуются. Пароли хешируются на сервере. Учебный проект TraceCheck.
+        <br />
+        Переходите в наш телеграм-бот — <a href="https://t.me/tracecheck_helper_bot" target="_blank" rel="noopener noreferrer">@tracecheck_helper_bot</a>
       </footer>
     </div>
   )

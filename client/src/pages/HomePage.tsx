@@ -1,17 +1,12 @@
-import { useDispatch } from 'react-redux'
 import { posts } from '@content'
 import heroImage from '../design/dima-hero.png'
 import { Footprint } from '../design/Footprint'
-import { resetGame } from '../state/gameSlice'
-import { resetCheckup } from '../state/checkupSlice'
-import type { AppDispatch } from '../store'
 import { Link } from '../router'
 import { VoxelTraceScene } from '../components/VoxelTraceScene'
 import { LiveLeaderboard } from '../components/LiveLeaderboard'
 import { PixelIcon } from '../design/PixelIcon'
 
 export function HomePage() {
-  const dispatch: AppDispatch = useDispatch()
   const ticket = posts[1].ticket
   return (
     <section className="page home hero">
@@ -22,23 +17,10 @@ export function HomePage() {
         <Link to="case" className="primary button-link">
           Начать <PixelIcon name="arrow-right" size={24} />
         </Link>
-        <Link to="checkup" className="secondary button-link">
-          <PixelIcon name="shield" size={24} /> Сразу проверить себя
-        </Link>
       </div>
       <div className="footprint-trail" aria-hidden="true">
         {Array.from({ length: 5 }, (_, index) => <Footprint key={index} />)}
       </div>
-      <button
-        type="button"
-        className="ghost"
-        onClick={() => {
-          dispatch(resetGame())
-          dispatch(resetCheckup())
-        }}
-      >
-        Начать заново
-      </button>
       </div>
       <div className="hero-scene">
         <div className="hero-image"><img src={heroImage} alt="Вымышленный студент Дима у подъезда" /></div>
