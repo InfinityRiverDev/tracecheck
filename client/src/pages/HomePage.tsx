@@ -2,8 +2,6 @@ import { posts } from '@content'
 import heroImage from '../design/dima-hero.png'
 import { Footprint } from '../design/Footprint'
 import { Link } from '../router'
-import { VoxelTraceScene } from '../components/VoxelTraceScene'
-import { LiveLeaderboard } from '../components/LiveLeaderboard'
 import { PixelIcon } from '../design/PixelIcon'
 
 export function HomePage() {
@@ -24,11 +22,18 @@ export function HomePage() {
       </div>
       <div className="hero-scene">
         <div className="hero-image"><img src={heroImage} alt="Вымышленный студент Дима у подъезда" /></div>
-        <VoxelTraceScene />
         {ticket && <span className="scene-tag scene-ticket">Билет на поезд<small>{ticket.date} · {ticket.route}</small></span>}
         <span className="scene-tag scene-location">Геометка<small>{posts[0].location}</small></span>
       </div>
-      <LiveLeaderboard />
+      <a
+        className="tg-cta"
+        href="https://t.me/tracecheck_helper_bot"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <PixelIcon name="chat" size={26} />
+        Переходите в наш Telegram-бот — <strong>@tracecheck_helper_bot</strong>
+      </a>
     </section>
   )
 }

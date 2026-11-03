@@ -482,12 +482,18 @@ body { font-family: Manrope, system-ui, sans-serif; }
 .scene-ticket { left: 4px; top: 20px; }
 .scene-location { right: 4px; bottom: 24px; }
 .footprint-trail { display: flex; gap: 14px; }
-.footprint-trail svg { animation: track 3s ease-in-out infinite; }
+.footprint-trail { gap: 18px; }
+.footprint-trail svg { width: 30px; height: auto; animation: track 3s ease-in-out infinite, paw-iridescent 4s linear infinite; transform-origin: center; }
 .footprint-trail svg:nth-child(2) { animation-delay: .5s; }
 .footprint-trail svg:nth-child(3) { animation-delay: 1s; }
 .footprint-trail svg:nth-child(4) { animation-delay: 1.5s; }
 .footprint-trail svg:nth-child(5) { animation-delay: 2s; }
-@keyframes track { 0%,100% { opacity: .2; } 35% { opacity: 1; } }
+@keyframes track { 0%,100% { opacity: .5; } 35% { opacity: 1; } }
+@keyframes paw-iridescent {
+  0%   { filter: hue-rotate(0deg) saturate(1.7) brightness(1.2) drop-shadow(0 0 6px #c084fc); }
+  50%  { filter: hue-rotate(180deg) saturate(2.1) brightness(1.65) drop-shadow(0 0 15px #67e8f9); }
+  100% { filter: hue-rotate(360deg) saturate(1.7) brightness(1.2) drop-shadow(0 0 6px #c084fc); }
+}
 @keyframes scan { from { top: -5%; } to { top: 105%; } }
 .page h2, .tc-game h2 { font-size: clamp(1.65rem, 4vw, 2.125rem); line-height: 1.2; }
 .card { border-radius: 18px; }
@@ -496,6 +502,26 @@ body { font-family: Manrope, system-ui, sans-serif; }
 .checkup .options { max-width: none; }
 .checkup .options .option { min-height: 52px; }
 .report .map, .report .cards-grid { max-width: none; }
+
+.tg-cta {
+  grid-column: 1 / -1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px 22px;
+  border: 1px solid #3a2a5c;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 0 28px #9333ea55;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.tg-cta:hover { border-color: var(--accent); box-shadow: 0 0 40px #c084fc80; transform: translateY(-2px); }
+.tg-cta strong { color: var(--accent); }
 
 @media (min-width: 900px) {
   .topbar { padding: 22px 40px; }
