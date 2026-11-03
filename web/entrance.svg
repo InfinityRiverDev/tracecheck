@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320">
+<rect width="640" height="320" fill="#b6a98e"/>
+<path d="M0 80h640M0 180h640M0 280h640" stroke="#8d816d" stroke-width="4"/>
+<rect x="400" y="24" width="196" height="64" rx="4" fill="#283734"/>
+<text x="498" y="51" text-anchor="middle" fill="#fff" font-family="sans-serif" font-size="17">СИРЕНЕВАЯ АЛЛЕЯ</text>
+<text x="498" y="76" text-anchor="middle" fill="#e2ff72" font-family="sans-serif" font-size="20">14</text>
+<rect x="438" y="112" width="160" height="208" rx="5" fill="#5b625b"/>
+<rect x="457" y="130" width="122" height="190" rx="2" fill="#323e3a"/>
+<path d="M28 320c9-88 49-127 126-128 82-1 141 48 153 128" fill="#52625a"/>
+<ellipse cx="156" cy="153" rx="58" ry="68" fill="#c48d72"/>
+<path d="M101 151c-12-47 20-80 57-80 37 0 61 23 60 57-31 2-61-12-78-22-7 22-22 36-39 45" fill="#302923"/>
+<path d="M136 168h2m37 0h2m-32 25q13 8 25-1" stroke="#302923" stroke-width="5" stroke-linecap="round" fill="none"/>
+</svg>

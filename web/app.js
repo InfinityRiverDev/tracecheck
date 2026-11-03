@@ -1,6 +1,9 @@
+import { renderGame } from './game.js'
+import { readSession } from './session.js'
+
 const sections = new Map(Array.from(document.querySelectorAll('main > section'), section => [section.id, section]))
 const main = document.querySelector('main')
-
+const session = readSession()
 const routes = {
   case: 'Лента Димы',
   dossier: 'Досье',
@@ -11,11 +14,11 @@ const routes = {
 
 function renderRoute(moveFocus = true) {
   const requested = location.hash.slice(1)
-  if (requested === 'main') return
   const id = sections.has(requested) ? requested : 'home'
   for (const [key, section] of sections) section.hidden = key !== id
   const target = sections.get(id)
-  if (id !== 'home' && !target.hasChildNodes()) {
+  if (id === 'case' || id === 'dossier' || id === 'edit') renderGame(id, target, session)
+  else if (id !== 'home' && !target.hasChildNodes()) {
     const title = document.createElement('h2')
     title.textContent = routes[id]
     target.append(title)
@@ -24,5 +27,9 @@ function renderRoute(moveFocus = true) {
   if (moveFocus) main.focus()
 }
 
+document.querySelector('.skip').addEventListener('click', event => {
+  event.preventDefault()
+  main.focus()
+})
 window.addEventListener('hashchange', () => renderRoute())
 renderRoute(false)

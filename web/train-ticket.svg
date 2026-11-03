@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320">
+<rect width="640" height="320" fill="#283d39"/>
+<g transform="translate(70 44)">
+<rect width="500" height="232" rx="14" fill="#e9e6d4"/>
+<path d="M0 61h500" stroke="#9a9d83" stroke-dasharray="6 5"/>
+<text x="28" y="39" fill="#283d39" font-family="monospace" font-size="18">БИЛЕТ / ОБРАЗЕЦ</text>
+<text x="28" y="110" fill="#172825" font-family="sans-serif" font-weight="700" font-size="32">Листоград → Озёрный</text>
+<text x="28" y="149" fill="#283d39" font-family="monospace" font-size="22">07 НОЯБРЯ</text>
+<rect x="28" y="175" width="178" height="25" rx="3" fill="#2a3330"/>
+<rect x="390" y="161" width="72" height="45" rx="3" fill="#2a3330"/>
+</g>
+</svg>
