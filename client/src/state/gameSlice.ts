@@ -1,4 +1,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { clues, editActions, findings } from '@content'
+
+const clueIds = new Set(clues.map(item => item.id))
+const editIds = new Set(editActions.map(item => item.id))
+const findingIds = new Set(findings.map(item => item.id))
+const validIds = (values: string[], allowed: Set<string>) => [...new Set(values.filter(id => allowed.has(id)))]
 
 // Игровая ветка: выбранные улики, активные правки поста, найденные выводы.
 export interface GameSlice {
@@ -28,9 +34,9 @@ export function loadInitialGame(): GameSlice {
       isStringArray(saved?.foundFindings)
     ) {
       return {
-        selectedClues: saved.selectedClues,
-        activeEdits: saved.activeEdits,
-        foundFindings: saved.foundFindings,
+        selectedClues: validIds(saved.selectedClues, clueIds),
+        activeEdits: validIds(saved.activeEdits, editIds),
+        foundFindings: validIds(saved.foundFindings, findingIds),
       }
     }
   } catch {
@@ -45,17 +51,20 @@ const gameSlice = createSlice({
   reducers: {
     toggleClue(state, action: PayloadAction<string>) {
       const id = action.payload
+      if (!clueIds.has(id)) return
       state.selectedClues = state.selectedClues.includes(id)
         ? state.selectedClues.filter(clue => clue !== id)
         : [...state.selectedClues, id]
     },
     toggleEdit(state, action: PayloadAction<string>) {
       const id = action.payload
+      if (!editIds.has(id)) return
       state.activeEdits = state.activeEdits.includes(id)
         ? state.activeEdits.filter(edit => edit !== id)
         : [...state.activeEdits, id]
     },
     markFindingFound(state, action: PayloadAction<string>) {
+      if (!findingIds.has(action.payload)) return
       if (!state.foundFindings.includes(action.payload)) {
         state.foundFindings.push(action.payload)
       }
