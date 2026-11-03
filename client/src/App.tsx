@@ -35,9 +35,8 @@ export default function App() {
       <header className="topbar">
         <a href="#/" className="brand"><PixelIcon name="fingerprint" size={30} />TraceCheck</a>
         <nav className="topnav" aria-label="Этапы TraceCheck">
-          <a href="#/" aria-current={route === 'home' ? 'page' : undefined}><PixelIcon name="home" size={20} />1 Главная</a>
-          <a href="#/case" aria-current={gameRoute ? 'page' : undefined}><PixelIcon name="levels" size={20} />2 Игра</a>
-          <a href="#/report" aria-current={route === 'report' ? 'page' : undefined}><PixelIcon name="dossier" size={20} />3 Результат</a>
+          <a href="#/" aria-current={route === 'home' ? 'page' : undefined}><PixelIcon name="home" size={20} />Главная</a>
+          <a href="#/case" aria-current={gameRoute ? 'page' : undefined}><PixelIcon name="levels" size={20} />Игра</a>
           <a href="#/profile" aria-current={route === 'profile' ? 'page' : undefined}><PixelIcon name="profile" size={20} />{user?.nickname ?? 'Профиль'}</a>
         </nav>
       </header>

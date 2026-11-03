@@ -7,6 +7,7 @@ import { resetCheckup } from '../state/checkupSlice'
 import type { AppDispatch } from '../store'
 import { Link } from '../router'
 import { VoxelTraceScene } from '../components/VoxelTraceScene'
+import { LiveLeaderboard } from '../components/LiveLeaderboard'
 import { PixelIcon } from '../design/PixelIcon'
 
 export function HomePage() {
@@ -45,6 +46,7 @@ export function HomePage() {
         {ticket && <span className="scene-tag scene-ticket">Билет на поезд<small>{ticket.date} · {ticket.route}</small></span>}
         <span className="scene-tag scene-location">Геометка<small>{posts[0].location}</small></span>
       </div>
+      <LiveLeaderboard />
     </section>
   )
 }

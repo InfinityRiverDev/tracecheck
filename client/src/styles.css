@@ -756,3 +756,152 @@ body { font-family: Manrope, system-ui, sans-serif; }
     width: 74px;
   }
 }
+
+/* Рейтинг на главной: серверный поток обновляет строки без перезагрузки. */
+.home-live-ranking {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid #3a2a5c;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(27, 19, 48, .96), rgba(11, 7, 20, .98));
+  box-shadow: 0 0 48px rgba(147, 51, 234, .14);
+}
+
+.ranking-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.ranking-heading .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ranking-heading h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.8rem);
+}
+
+.live-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font: 600 .72rem/1.4 var(--mono);
+  text-transform: uppercase;
+}
+
+.live-status > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #7c718f;
+}
+
+.live-status.is-live {
+  color: #c7ffe8;
+}
+
+.live-status.is-live > span {
+  background: #50e3a4;
+  box-shadow: 0 0 12px rgba(80, 227, 164, .75);
+}
+
+.ranking-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1px solid #302448;
+  border-radius: 13px;
+  background: rgba(7, 5, 13, .58);
+}
+
+.leaderboard-row:first-child {
+  border-color: #8b5bc2;
+  background: linear-gradient(90deg, rgba(147, 51, 234, .2), rgba(7, 5, 13, .58));
+}
+
+.rank-place {
+  color: var(--accent);
+  font-family: var(--mono);
+}
+
+.rank-name {
+  overflow: hidden;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-levels,
+.rank-exp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.rank-exp {
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .topnav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .topnav a {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding-inline: 7px;
+  }
+
+  .ranking-heading {
+    align-items: flex-start;
+  }
+
+  .leaderboard-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding-inline: 10px;
+  }
+
+  .rank-levels {
+    display: none;
+  }
+
+  .rank-exp {
+    font-size: .75rem;
+  }
+}

@@ -124,6 +124,7 @@ export function createMongoStore(uri) {
         await progress.insertOne({
           userId: result.insertedId,
           exp: 0,
+          expReachedAt: now,
           completedLevels: [],
           achievements: [],
           dossierFragments: [],
@@ -165,8 +166,44 @@ export function createMongoStore(uri) {
       const result = await (await collections()).attempts.insertOne({ ...attempt, createdAt: now, updatedAt: now })
       return { id: String(result.insertedId), createdAt: now }
     },
+    async leaderboard(limit = 20) {
+      const safeLimit = Math.max(1, Math.min(100, Number.isSafeInteger(limit) ? limit : 20))
+      const { progress } = await collections()
+      const rows = await progress.aggregate([
+        { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+        { $unwind: '$user' },
+        {
+          $project: {
+            _id: 0,
+            nickname: '$user.nickname',
+            exp: { $ifNull: ['$exp', 0] },
+            completedLevels: {
+              $size: { $cond: [{ $isArray: '$completedLevels' }, '$completedLevels', []] },
+            },
+            expReachedAt: { $ifNull: ['$expReachedAt', { $ifNull: ['$updatedAt', '$createdAt'] }] },
+          },
+        },
+        { $sort: { exp: -1, expReachedAt: 1, nickname: 1 } },
+        { $limit: safeLimit },
+      ]).toArray()
+      return rows
+    },
     close: () => client.close(),
   }
+}
+
+export function safeLeaderboardEntries(rows) {
+  if (!Array.isArray(rows)) return []
+  return rows.slice(0, 100).map((row, index) => ({
+    rank: index + 1,
+    nickname: typeof row?.nickname === 'string' && row.nickname.trim()
+      ? row.nickname.trim().slice(0, 40)
+      : 'Следопыт',
+    exp: Number.isFinite(row?.exp) ? Math.max(0, Math.floor(row.exp)) : 0,
+    completedLevels: Number.isFinite(row?.completedLevels)
+      ? Math.max(0, Math.min(10, Math.floor(row.completedLevels)))
+      : Array.isArray(row?.completedLevels) ? Math.min(10, row.completedLevels.length) : 0,
+  }))
 }
 
 function sendJson(res, status, value, headers = {}) {
@@ -327,6 +364,52 @@ export function createTraceCheckServer({
         return sendJson(res, 204, null, {
           'set-cookie': clearSessionCookie({ secure: secureCookies }),
         })
+      }
+
+      if (url.pathname === '/api/leaderboard' && req.method === 'GET') {
+        if (!store?.leaderboard) return sendJson(res, 503, { error: 'database_not_configured' })
+        const entries = safeLeaderboardEntries(await store.leaderboard(20))
+        return sendJson(res, 200, { entries, updatedAt: new Date().toISOString() })
+      }
+
+      if (url.pathname === '/api/leaderboard/stream' && req.method === 'GET') {
+        if (!store?.leaderboard) return sendJson(res, 503, { error: 'database_not_configured' })
+        res.writeHead(200, {
+          'content-type': 'text/event-stream; charset=utf-8',
+          'cache-control': 'no-store, no-transform',
+          connection: 'keep-alive',
+          'x-accel-buffering': 'no',
+        })
+        res.flushHeaders?.()
+        let closed = false
+        let busy = false
+        let lastEntries = ''
+        const publish = async () => {
+          if (closed || busy) return
+          busy = true
+          try {
+            const entries = safeLeaderboardEntries(await store.leaderboard(20))
+            const serialized = JSON.stringify(entries)
+            if (serialized !== lastEntries) {
+              lastEntries = serialized
+              res.write(`event: leaderboard\ndata: ${JSON.stringify({ entries, updatedAt: new Date().toISOString() })}\n\n`)
+            } else {
+              res.write(': keepalive\n\n')
+            }
+          } catch {
+            res.write('event: unavailable\ndata: {}\n\n')
+          } finally {
+            busy = false
+          }
+        }
+        req.on('close', () => {
+          closed = true
+          clearInterval(timer)
+        })
+        const timer = setInterval(publish, 2500)
+        timer.unref?.()
+        await publish()
+        return
       }
 
       const match = url.pathname.match(/^\/api\/sessions\/([^/]+)$/)
