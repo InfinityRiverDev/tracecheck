@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Расследование и проверка цифрового следа за пять минут.">
+  <title>TraceCheck — досье за 5 минут</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <a class="skip" href="#main">К содержанию</a>
+  <header class="shell top">
+    <a class="brand" href="./" aria-label="TraceCheck, главная"><span aria-hidden="true">◉</span> TraceCheck</a>
+    <nav aria-label="Разделы"><a href="#case">Расследование</a><a href="#checkup">Самооценка</a></nav>
+  </header>
+  <main id="main" class="shell" tabindex="-1">
+    <section id="home" class="hero">
+      <p class="eyebrow">ДЕЛО 001 <span>·</span> 5 МИНУТ</p>
+      <h1>Что о тебе расскажут <em>твои посты?</em></h1>
+      <p class="intro">Собери досье на вымышленного студента, измени одну публикацию и посмотри, какие выводы исчезнут.</p>
+      <div class="actions"><a class="button primary" href="#case">Начать расследование →</a><a class="button" href="#checkup">Сразу проверить себя</a></div>
+    </section>
+    <section id="case" class="view" hidden></section>
+    <section id="dossier" class="view" hidden></section>
+    <section id="edit" class="view" hidden></section>
+    <section id="checkup" class="view" hidden></section>
+    <section id="report" class="view" hidden></section>
+  </main>
+  <footer class="shell footer"><span>TRACE / 001</span><span>Вымышленный кейс · Ответы остаются в этой вкладке</span></footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
