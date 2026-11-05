@@ -25,6 +25,7 @@ if (!uri) {
     const users = db.collection('users')
     const progress = db.collection('progress')
     const authSessions = db.collection('authSessions')
+    const connectionStatus = await db.command({ connectionStatus: 1, showPrivileges: false })
     const duplicateNicknameKeys = await users.aggregate([
       { $group: { _id: '$nicknameKey', count: { $sum: 1 } } },
       { $match: { _id: { $ne: null }, count: { $gt: 1 } } },
@@ -45,7 +46,16 @@ if (!uri) {
       { key: 'main' },
       { projection: { _id: 0, payload: 1, updatedAt: 1 } },
     )
-    let quiz = { present: false, valid: true, users: 0, admins: 0, malformedUsers: 0, updatedAt: null }
+    let quiz = {
+      present: false,
+      valid: true,
+      users: 0,
+      admins: 0,
+      malformedUsers: 0,
+      invalidPasswordHashes: 0,
+      plaintextPasswordFields: 0,
+      updatedAt: null,
+    }
     if (quizDocument) {
       quiz.present = true
       quiz.updatedAt = quizDocument.updatedAt ?? null
@@ -59,6 +69,12 @@ if (!uri) {
         quiz.malformedUsers = quizUsers.filter(user =>
           !user || typeof user.salt !== 'string' || typeof user.hash !== 'string' ||
           !user.solved || typeof user.solved !== 'object' || Array.isArray(user.solved)
+        ).length
+        quiz.invalidPasswordHashes = quizUsers.filter(user =>
+          !/^[a-f0-9]{32}$/i.test(user?.salt ?? '') || !/^[a-f0-9]{64}$/i.test(user?.hash ?? '')
+        ).length
+        quiz.plaintextPasswordFields = quizUsers.filter(user =>
+          Object.hasOwn(user ?? {}, 'password') || Object.hasOwn(user ?? {}, 'passwordHash')
         ).length
       } catch {
         quiz.valid = false
@@ -77,6 +93,17 @@ if (!uri) {
         progressWithoutUsers: progressWithoutUsers?.count ?? 0,
         expiredAuthSessionsAwaitingTtl: await authSessions.countDocuments({ expiresAt: { $lte: new Date() } }),
         mainAdminProfiles: await users.countDocuments({ nicknameKey: 'admin', role: 'admin' }),
+      },
+      credentials: {
+        mainUsersWithPlaintextPassword: await users.countDocuments({ password: { $exists: true } }),
+        mainUsersWithInvalidPasswordHash: await users.countDocuments({
+          $or: [
+            { passwordHash: { $exists: false } },
+            { passwordHash: { $not: /^scrypt\$32768\$8\$1\$/ } },
+          ],
+        }),
+        databaseRoles: connectionStatus.authInfo.authenticatedUserRoles,
+        leastPrivilegeWarning: connectionStatus.authInfo.authenticatedUserRoles.some(role => role.role === 'atlasAdmin'),
       },
       quiz,
     }, null, 2))

@@ -34,10 +34,16 @@ export function verifyQuizPassword(password, salt, hash) {
   }
 }
 
-function normalizeNick(value) {
+function normalizeStoredNick(value) {
   if (typeof value !== 'string') return null
   const display = value.normalize('NFKC').trim()
-  return NICK.test(display) ? display : null
+  if (display.length < 2 || display.length > 64 || /[\u0000-\u001f\u007f]/u.test(display)) return null
+  return display
+}
+
+function normalizeNewNick(value) {
+  const display = normalizeStoredNick(value)
+  return display && NICK.test(display) ? display : null
 }
 
 function nickKey(value) {
@@ -123,7 +129,7 @@ export function createQuizLeaderboardServer({
   const authLimits = new Map()
 
   function findNick(value) {
-    const normalized = normalizeNick(value)
+    const normalized = normalizeStoredNick(value)
     if (!normalized) return null
     const key = nickKey(normalized)
     return Object.keys(db.users).find(existing => nickKey(existing) === key) ?? null
@@ -186,6 +192,7 @@ export function createQuizLeaderboardServer({
       await writeFile(dataPath, payload, { encoding: 'utf8', mode: 0o600 })
     } catch (error) {
       logger.error(`Quiz local save failed: ${error.message}`)
+      throw error
     }
   }
 
@@ -252,6 +259,51 @@ export function createQuizLeaderboardServer({
     }
   }
 
+  async function clearScores(socket) {
+    const previous = new Map()
+    for (const [userNick, user] of Object.entries(db.users)) {
+      if (userIsAdmin(userNick)) continue
+      previous.set(userNick, user.solved)
+      user.solved = {}
+    }
+    clearTimeout(saveTimer)
+    try {
+      await persistNow()
+      broadcast()
+      wsSend(socket, { type: 'admin-result', action: 'clear', ok: true })
+    } catch {
+      for (const [userNick, solved] of previous) {
+        if (db.users[userNick]) db.users[userNick].solved = solved
+      }
+      wsSend(socket, { type: 'admin-result', action: 'clear', ok: false, reason: 'storage' })
+    }
+  }
+
+  async function deleteUser(socket, requestedNick) {
+    const target = findNick(requestedNick)
+    if (!target || userIsAdmin(target)) {
+      wsSend(socket, {
+        type: 'admin-result',
+        action: 'delete-user',
+        ok: false,
+        reason: target ? 'protected' : 'not-found',
+      })
+      return
+    }
+    const previous = db.users[target]
+    delete db.users[target]
+    clearTimeout(saveTimer)
+    try {
+      await persistNow()
+      revokeUser(target)
+      broadcast()
+      wsSend(socket, { type: 'admin-result', action: 'delete-user', ok: true, nick: target })
+    } catch {
+      db.users[target] = previous
+      wsSend(socket, { type: 'admin-result', action: 'delete-user', ok: false, reason: 'storage' })
+    }
+  }
+
   const server = createServer(async (req, res) => {
     try {
       await ready
@@ -261,12 +313,15 @@ export function createQuizLeaderboardServer({
           return sendJson(res, 415, { error: 'Нужен JSON-запрос' })
         }
         const data = await readJson(req)
-        const requestedNick = normalizeNick(data?.nick)
+        const requestedNick = normalizeStoredNick(data?.nick)
         const password = typeof data?.password === 'string' ? data.password : ''
         if (!requestedNick) return sendJson(res, 400, { error: 'Ник: 2–24 буквы, цифры, дефис или _' })
         if (rateLimited(req, requestedNick)) return sendJson(res, 429, { error: 'Слишком много попыток. Попробуйте позже' })
         const existingNick = findNick(requestedNick)
         if (url.pathname === '/register') {
+          if (!normalizeNewNick(requestedNick)) {
+            return sendJson(res, 400, { error: 'Ник: 2–24 буквы, цифры, дефис или _' })
+          }
           if (password.length < 10 || password.length > 128) {
             return sendJson(res, 400, { error: 'Пароль: 10–128 символов' })
           }
@@ -364,24 +419,10 @@ export function createQuizLeaderboardServer({
         }
         if (!userIsAdmin(nick)) continue
         if (message.type === 'clear') {
-          for (const [userNick, user] of Object.entries(db.users)) {
-            if (!userIsAdmin(userNick)) user.solved = {}
-          }
-          scheduleSave()
-          broadcast()
-          wsSend(socket, { type: 'admin-result', action: 'clear', ok: true })
+          void clearScores(socket)
         }
         if (message.type === 'delete-user') {
-          const target = findNick(message.nick)
-          if (!target || userIsAdmin(target)) {
-            wsSend(socket, { type: 'admin-result', action: 'delete-user', ok: false })
-            continue
-          }
-          delete db.users[target]
-          revokeUser(target)
-          scheduleSave()
-          broadcast()
-          wsSend(socket, { type: 'admin-result', action: 'delete-user', ok: true, nick: target })
+          void deleteUser(socket, message.nick)
         }
       }
     })

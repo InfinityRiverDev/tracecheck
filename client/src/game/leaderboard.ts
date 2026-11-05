@@ -69,9 +69,17 @@ export function useLeaderboard(token: string | null) {
           const msg = JSON.parse(event.data)
           if (msg.type === 'leaderboard' && Array.isArray(msg.rows)) setRows(msg.rows)
           if (msg.type === 'admin-result') {
-            setAdminNotice(msg.ok
-              ? msg.action === 'clear' ? 'Рейтинг очищен' : `Пользователь ${msg.nick} удалён`
-              : 'Операцию выполнить не удалось')
+            if (msg.ok) {
+              setAdminNotice(msg.action === 'clear' ? 'Рейтинг очищен' : `Пользователь ${msg.nick} удалён`)
+            } else if (msg.reason === 'protected') {
+              setAdminNotice('Администратора удалить нельзя')
+            } else if (msg.reason === 'not-found') {
+              setAdminNotice('Пользователь уже удалён или не найден')
+            } else if (msg.reason === 'storage') {
+              setAdminNotice('MongoDB временно недоступна — изменения не применены')
+            } else {
+              setAdminNotice('Операцию выполнить не удалось')
+            }
           }
           if (msg.type === 'session-revoked') {
             clearSession()

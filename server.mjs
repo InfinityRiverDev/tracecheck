@@ -258,6 +258,28 @@ function sendJson(res, status, value, headers = {}) {
   res.end(status === 204 ? undefined : JSON.stringify(value))
 }
 
+function setSecurityHeaders(res, { secure = false } = {}) {
+  res.setHeader('content-security-policy', [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
+    "img-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; '))
+  res.setHeader('x-content-type-options', 'nosniff')
+  res.setHeader('x-frame-options', 'DENY')
+  res.setHeader('referrer-policy', 'no-referrer')
+  res.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=()')
+  res.setHeader('cross-origin-opener-policy', 'same-origin')
+  res.setHeader('cross-origin-resource-policy', 'same-origin')
+  if (secure) res.setHeader('strict-transport-security', 'max-age=31536000; includeSubDomains')
+}
+
 function acceptsJson(req) {
   return req.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() === 'application/json'
 }
@@ -310,6 +332,7 @@ export function createTraceCheckServer({
   }
 
   const server = createServer(async (req, res) => {
+    setSecurityHeaders(res, { secure: secureCookies })
     try {
       const url = new URL(req.url ?? '/', 'http://tracecheck.local')
       if (url.pathname === '/quiz-live-api' || url.pathname.startsWith('/quiz-live-api/')) {
@@ -493,7 +516,13 @@ export function createTraceCheckServer({
       const info = await stat(file)
       if (!info.isFile()) throw Object.assign(new Error('not_found'), { code: 'ENOENT' })
       const body = await readFile(file)
-      res.writeHead(200, { 'content-type': mime[extname(file)] ?? 'application/octet-stream' })
+      const cacheControl = extname(file) === '.html'
+        ? 'no-cache'
+        : url.pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'public, max-age=3600'
+      res.writeHead(200, {
+        'content-type': mime[extname(file)] ?? 'application/octet-stream',
+        'cache-control': cacheControl,
+      })
       res.end(body)
     } catch (error) {
       if (error?.code === 'ERR_INVALID_URL' || error instanceof URIError) {

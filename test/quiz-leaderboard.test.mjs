@@ -1,10 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { createQuizLeaderboardServer } from '../server/leaderboard.mjs'
+import { createQuizLeaderboardServer, hashQuizPassword } from '../server/leaderboard.mjs'
 
 const ADMIN_PASSWORD = 'admin-test-password-42'
 const USER_PASSWORD = 'player-test-password-42'
@@ -57,6 +57,13 @@ async function closeSocket(socket) {
 test('quiz admin is persistent and can clear scores and delete only non-admin users', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'tracecheck-quiz-'))
   const dataPath = join(directory, 'state.json')
+  const legacyNick = 'legacy.user@example'
+  const legacyPassword = 'legacy-player-password-42'
+  await writeFile(dataPath, JSON.stringify({
+    users: {
+      [legacyNick]: { ...hashQuizPassword(legacyPassword), solved: {}, role: 'user' },
+    },
+  }))
   const app = createQuizLeaderboardServer({
     mongoUri: '',
     dataPath,
@@ -77,6 +84,8 @@ test('quiz admin is persistent and can clear scores and delete only non-admin us
   assert.equal(registration.status, 201)
   assert.equal(registration.body.admin, false)
   assert.equal((await post(origin, '/register', { nick: 'player_one', password: USER_PASSWORD })).status, 409)
+  assert.equal((await post(origin, '/register', { nick: 'new.user', password: USER_PASSWORD })).status, 400)
+  assert.equal((await post(origin, '/login', { nick: legacyNick, password: legacyPassword })).status, 200)
 
   const adminLogin = await post(origin, '/login', { nick: 'ADMIN', password: ADMIN_PASSWORD })
   assert.equal(adminLogin.status, 200)
@@ -102,18 +111,26 @@ test('quiz admin is persistent and can clear scores and delete only non-admin us
   admin.socket.send(JSON.stringify({ type: 'delete-user', nick: 'admin' }))
   assert.equal((await selfDeleteResult).ok, false)
 
-  const deletedBoard = admin.next(message => message.type === 'leaderboard' && message.rows.length === 0)
+  const deletedBoard = admin.next(message => message.type === 'leaderboard' && message.rows.length === 1)
   const deleteResult = admin.next(message => message.type === 'admin-result' && message.nick === 'Player_One')
   admin.socket.send(JSON.stringify({ type: 'delete-user', nick: 'player_one' }))
-  assert.deepEqual((await deletedBoard).rows, [])
+  assert.equal((await deletedBoard).rows[0].nick, legacyNick)
   assert.equal((await deleteResult).ok, true)
   assert.equal((await post(origin, '/login', { nick: 'Player_One', password: USER_PASSWORD })).status, 401)
+
+  const legacyDeletedBoard = admin.next(message => message.type === 'leaderboard' && message.rows.length === 0)
+  const legacyDeleteResult = admin.next(message => message.type === 'admin-result' && message.nick === legacyNick)
+  admin.socket.send(JSON.stringify({ type: 'delete-user', nick: legacyNick }))
+  assert.deepEqual((await legacyDeletedBoard).rows, [])
+  assert.equal((await legacyDeleteResult).ok, true)
+  assert.equal((await post(origin, '/login', { nick: legacyNick, password: legacyPassword })).status, 401)
 
   await Promise.all([closeSocket(player.socket), closeSocket(admin.socket)])
   await app.close()
   const persisted = JSON.parse(await readFile(dataPath, 'utf8'))
   assert.equal(persisted.users.admin.role, 'admin')
   assert.equal(persisted.users.Player_One, undefined)
+  assert.equal(persisted.users[legacyNick], undefined)
 
   const restarted = createQuizLeaderboardServer({ mongoUri: '', dataPath, logger: { error() {} } })
   await restarted.ready
