@@ -160,6 +160,7 @@ export function createMongoStore(uri) {
         nickname,
         nicknameKey,
         passwordHash,
+        role: 'user',
         providers: { password: true },
         avatarKey: 'detective-violet',
         settings: {},

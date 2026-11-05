@@ -18,6 +18,8 @@
 .q-board {
   display: grid;
   gap: .7rem;
+  max-width: 100%;
+  overflow-x: auto;
   padding: clamp(1rem, 3vw, 1.4rem);
   border: 1px solid var(--line, #2b2145);
   border-radius: 16px;
@@ -91,12 +93,12 @@
 .q-board tbody tr:last-child td { border-bottom: 0; }
 .q-board td:first-child { width: 2rem; color: var(--muted, #b3a8cc); }
 .q-board td:nth-child(2) { color: var(--muted, #b3a8cc); }
-.q-board td:last-child { font-family: var(--mono, 'JetBrains Mono', monospace); color: var(--muted, #b3a8cc); }
+.q-board td:nth-child(3) { font-family: var(--mono, 'JetBrains Mono', monospace); color: var(--muted, #b3a8cc); }
 .q-board tr.is-ok td:nth-child(2) { color: var(--ink, #f4f0ff); }
-.q-board tr.is-ok td:last-child { color: var(--q-ok); }
+.q-board tr.is-ok td:nth-child(3) { color: var(--q-ok); }
 .q-board tr.is-me td { background: #1c1233; }
 .q-board tr.is-me td:nth-child(2) { color: var(--ink, #f4f0ff); font-weight: 700; }
-.q-board tr.is-me td:last-child { color: var(--accent, #c084fc); }
+.q-board tr.is-me td:nth-child(3) { color: var(--accent, #c084fc); }
 .q-you { color: var(--accent, #c084fc); font-weight: 400; }
 .q-board-empty { color: var(--muted, #b3a8cc); font-style: italic; text-align: center; }
 .q-live { font-family: var(--mono, 'JetBrains Mono', monospace); font-size: .72rem; font-weight: 400; color: var(--muted, #b3a8cc); }
@@ -128,6 +130,9 @@
 .q-auth-error { margin: 0; color: var(--q-bad); font-size: .9rem; }
 .q-auth-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem; }
 .q-auth-switch { background: none; border: 0; color: var(--accent, #c084fc); cursor: pointer; font: inherit; text-decoration: underline; padding: .3rem 0; }
+.q-admin-notice { margin: .65rem 0 0; color: var(--q-ok, #34d399); font-weight: 700; }
+.q-delete-user { border: 1px solid #ff8b9b; border-radius: 7px; background: transparent; color: #ffb5c0; cursor: pointer; font: inherit; padding: .35rem .55rem; white-space: nowrap; }
+.q-delete-user:hover, .q-delete-user:focus-visible { background: rgba(255, 75, 105, .15); outline: 2px solid transparent; }
 
 .q-handle {
   font-family: var(--mono, 'JetBrains Mono', monospace);

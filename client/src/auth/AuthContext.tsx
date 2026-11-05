@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 export type AuthUser = {
   id: string
   nickname: string
+  role: 'user' | 'admin'
   createdAt: string
 }
 

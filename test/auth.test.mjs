@@ -81,7 +81,7 @@ test('register, me, logout and login use an opaque HttpOnly session', async t =>
   }))
   assert.equal(registration.status, 201)
   assert.deepEqual(await registration.json(), {
-    user: { id: '1', nickname: 'Trace_Player', createdAt: '2026-11-03T00:00:00.000Z' },
+    user: { id: '1', nickname: 'Trace_Player', role: 'user', createdAt: '2026-11-03T00:00:00.000Z' },
   })
   const setCookie = registration.headers.get('set-cookie')
   assert.match(setCookie, new RegExp(`^${SECURE_AUTH_COOKIE}=[A-Za-z0-9_-]{43};`))

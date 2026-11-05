@@ -51,6 +51,7 @@ export const login = (nick: string, password: string) => auth('login', nick, pas
 export function useLeaderboard(token: string | null) {
   const [rows, setRows] = useState<Row[]>([])
   const [connected, setConnected] = useState(false)
+  const [adminNotice, setAdminNotice] = useState('')
   const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
@@ -67,6 +68,15 @@ export function useLeaderboard(token: string | null) {
         try {
           const msg = JSON.parse(event.data)
           if (msg.type === 'leaderboard' && Array.isArray(msg.rows)) setRows(msg.rows)
+          if (msg.type === 'admin-result') {
+            setAdminNotice(msg.ok
+              ? msg.action === 'clear' ? 'Рейтинг очищен' : `Пользователь ${msg.nick} удалён`
+              : 'Операцию выполнить не удалось')
+          }
+          if (msg.type === 'session-revoked') {
+            clearSession()
+            window.location.reload()
+          }
         } catch { /* ignore */ }
       }
       ws.onclose = () => {
@@ -94,5 +104,12 @@ export function useLeaderboard(token: string | null) {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'clear' }))
   }, [])
 
-  return { rows, connected, solve, clearBoard }
+  const deleteUser = useCallback((nick: string) => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'delete-user', nick }))
+    }
+  }, [])
+
+  return { rows, connected, solve, clearBoard, deleteUser, adminNotice }
 }

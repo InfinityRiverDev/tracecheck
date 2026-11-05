@@ -54,7 +54,9 @@ export function Auth({ onAuth }: { onAuth: (session: Session) => void }) {
             value={password}
             onChange={event => setPassword(event.target.value)}
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-            placeholder="минимум 3 символа"
+            minLength={10}
+            maxLength={128}
+            placeholder="10–128 символов"
           />
         </label>
 

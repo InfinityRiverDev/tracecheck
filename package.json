@@ -8,10 +8,12 @@
   },
   "scripts": {
     "build": "npm run build --prefix client && node build.mjs",
-    "dev": "npm run build && node --env-file-if-exists=.env server.mjs",
-    "start": "npm run build && node server.mjs",
+    "dev": "npm run build && node --env-file-if-exists=.env render-start.mjs",
+    "start": "npm run build && node render-start.mjs",
     "test": "node --test",
-    "check:production": "node checks/production.check.mjs"
+    "check:production": "node checks/production.check.mjs",
+    "db:audit": "node --env-file-if-exists=.env scripts/db-audit.mjs",
+    "admin:create": "node --env-file-if-exists=.env scripts/create-admin.mjs"
   },
   "dependencies": {
     "mongodb": "^7.8.0"

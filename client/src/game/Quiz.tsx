@@ -141,12 +141,16 @@ function Leaderboard({
   connected,
   admin,
   onClear,
+  onDelete,
+  adminNotice,
 }: {
   rows: Row[]
   me: string
   connected: boolean
   admin: boolean
   onClear: () => void
+  onDelete: (nick: string) => void
+  adminNotice: string
 }) {
   return (
     <div className="q-board">
@@ -169,18 +173,20 @@ function Leaderboard({
           )}
         </div>
       </div>
+      {admin && adminNotice && <p className="q-admin-notice" role="status">{adminNotice}</p>}
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Пользователь</th>
             <th>Рейтинг</th>
+            {admin && <th>Действия</th>}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={3} className="q-board-empty">Пока никого — ответь первым!</td>
+              <td colSpan={admin ? 4 : 3} className="q-board-empty">Пока никого — ответь первым!</td>
             </tr>
           )}
           {rows.map(row => (
@@ -191,6 +197,21 @@ function Leaderboard({
                 {row.nick === me && <span className="q-you"> (вы)</span>}
               </td>
               <td>{row.score}</td>
+              {admin && (
+                <td>
+                  <button
+                    type="button"
+                    className="q-delete-user"
+                    onClick={() => {
+                      if (window.confirm(`Удалить пользователя «${row.nick}»? Это действие нельзя отменить.`)) {
+                        onDelete(row.nick)
+                      }
+                    }}
+                  >
+                    Удалить
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -283,7 +304,7 @@ function Certificate() {
 }
 
 function QuizGame({ session, onLogout }: { session: Session; onLogout: () => void }) {
-  const { rows, connected, solve, clearBoard } = useLeaderboard(session.token)
+  const { rows, connected, solve, clearBoard, deleteUser, adminNotice } = useLeaderboard(session.token)
   const [solved, setSolved] = useState<Set<number>>(() => new Set())
   const allDone = solved.size === QUESTIONS.length
 
@@ -312,6 +333,8 @@ function QuizGame({ session, onLogout }: { session: Session; onLogout: () => voi
         connected={connected}
         admin={session.admin}
         onClear={clearBoard}
+        onDelete={deleteUser}
+        adminNotice={adminNotice}
       />
 
       {allDone && <Certificate />}

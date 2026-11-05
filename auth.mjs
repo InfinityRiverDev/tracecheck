@@ -101,6 +101,7 @@ export function publicUser(user) {
   return {
     id: String(user._id ?? user.id),
     nickname: user.nickname,
+    role: user.role === 'admin' ? 'admin' : 'user',
     createdAt: user.createdAt,
   }
 }
